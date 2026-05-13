@@ -156,7 +156,6 @@ jobs:
           tags: |
             type=raw,value=${{ matrix.component }},enable=${{ matrix.component != 'unified' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && matrix.component == 'unified' }}
-            type=sha,format=short,prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
             type=semver,pattern={{version}},prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
             type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
             type=semver,pattern={{major}},prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
@@ -169,5 +168,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
