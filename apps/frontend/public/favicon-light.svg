@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Gun Body (Indigo 600) -->
+  <path d="M4 12h12v6H4z" fill="#4f46e5" rx="1"/>
+  <path d="M4 18h4v4H4z" fill="#4f46e5" rx="1"/>
+  <!-- Bullet (Violet 500) -->
+  <rect x="22" y="13" width="6" height="4" rx="2" fill="#8b5cf6"/>
+</svg>

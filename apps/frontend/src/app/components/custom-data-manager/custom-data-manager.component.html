@@ -1,0 +1,151 @@
+<div class="fixed inset-0 z-1000 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" (click)="close.emit()"></div>
+  <div class="relative w-full max-w-3xl bg-brand-surface border border-brand-border rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-brand-border/30">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
+          <app-icon name="server" [size]="24"></app-icon>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-brand-text">Manage Custom Data</h2>
+          <p class="text-xs text-brand-text-muted mt-1">Create your own templates and dictionaries.</p>
+        </div>
+      </div>
+      <button (click)="close.emit()" class="p-2 text-brand-text-muted hover:text-white hover:bg-white/10 rounded-xl transition-all">
+        <app-icon name="close" [size]="20"></app-icon>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    @if (mode() === 'all') {
+      <div class="flex px-6 border-b border-brand-border/30">
+        <button 
+          (click)="activeTab.set('templates')"
+          [class.text-brand-primary]="activeTab() === 'templates'"
+          [class.border-brand-primary]="activeTab() === 'templates'"
+          [class.text-brand-text-muted]="activeTab() !== 'templates'"
+          [class.border-transparent]="activeTab() !== 'templates'"
+          class="px-4 py-4 text-sm font-bold uppercase tracking-tighter border-b-2 transition-all"
+        >
+          Templates
+        </button>
+        <button 
+          (click)="activeTab.set('dictionaries')"
+          [class.text-brand-primary]="activeTab() === 'dictionaries'"
+          [class.border-brand-primary]="activeTab() === 'dictionaries'"
+          [class.text-brand-text-muted]="activeTab() !== 'dictionaries'"
+          [class.border-transparent]="activeTab() !== 'dictionaries'"
+          class="px-4 py-4 text-sm font-bold uppercase tracking-tighter border-b-2 transition-all"
+        >
+          Dictionaries (Fake Modules)
+        </button>
+      </div>
+    }
+
+    <!-- Body -->
+    <div class="p-6 overflow-y-auto brand-scrollbar flex-1">
+      
+      @if (activeTab() === 'templates') {
+        <div class="space-y-6">
+          <!-- New Template Form -->
+          <div class="bg-brand-overlay/50 border border-brand-border/50 rounded-xl p-4 space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-tighter text-brand-primary">Create New Template</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-sm font-bold uppercase tracking-tighter text-brand-text-muted">Name</label>
+                <input type="text" [(ngModel)]="newTemplateName" placeholder="e.g. Flight Log" class="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm text-brand-text focus:border-brand-primary transition-all">
+              </div>
+              <div class="space-y-1">
+                <label class="text-sm font-bold uppercase tracking-tighter text-brand-text-muted">Category</label>
+                <input type="text" [(ngModel)]="newTemplateCategory" placeholder="e.g. Aviation" class="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm text-brand-text focus:border-brand-primary transition-all">
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm font-bold uppercase tracking-tighter text-brand-text-muted">Template String</label>
+              <input type="text" [(ngModel)]="newTemplateContent" placeholder="e.g. FLIGHT-{{'{'}}{{'{'}}airline.flightNumber{{'}'}}{{'}'}}-{{'{'}}{{'{'}}location.city{{'}'}}{{'}'}}" class="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm font-mono text-brand-text focus:border-brand-primary transition-all">
+            </div>
+            <button (click)="saveTemplate()" [disabled]="!newTemplateName() || !newTemplateCategory() || !newTemplateContent()" class="px-4 py-2 bg-brand-primary/20 text-brand-primary border border-brand-primary/50 rounded-lg text-sm font-bold uppercase tracking-tighter hover:bg-brand-primary hover:text-white transition-all disabled:opacity-50">
+              Save Template
+            </button>
+          </div>
+
+          <!-- List -->
+          <div class="space-y-2">
+            @for (tpl of socketService.customTemplates(); track tpl.id) {
+              <div class="flex items-center justify-between p-3 bg-brand-surface border border-brand-border/50 rounded-lg group hover:border-brand-primary/30 transition-all">
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-bold uppercase tracking-tighter text-brand-primary">{{tpl.category}}</span>
+                    <span class="text-xs font-bold text-brand-text">{{tpl.name}}</span>
+                    @if (tpl.source === 'static') {
+                      <span class="text-[10px] font-bold uppercase tracking-tighter text-brand-text-muted border border-brand-border rounded px-1.5 py-0.5">Built In</span>
+                    }
+                  </div>
+                  <div class="text-sm font-mono text-brand-text-muted">{{tpl.template}}</div>
+                </div>
+                @if (tpl.source !== 'static') {
+                  <button (click)="socketService.deleteCustomTemplate(tpl.id)" class="p-2 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                    <app-icon name="delete" [size]="16"></app-icon>
+                  </button>
+                }
+              </div>
+            } @empty {
+              <div class="text-center p-8 text-brand-text-muted text-sm border border-dashed border-brand-border rounded-xl">
+                No custom templates created yet.
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (activeTab() === 'dictionaries') {
+        <div class="space-y-6">
+          <!-- New Dictionary Form -->
+          <div class="bg-brand-overlay/50 border border-brand-border/50 rounded-xl p-4 space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-tighter text-brand-primary">Create New Dictionary</h3>
+            <p class="text-xs text-brand-text-muted">Dictionaries will be available as <code class="text-brand-primary">custom.name</code> in your templates.</p>
+            <div class="space-y-1">
+              <label class="text-sm font-bold uppercase tracking-tighter text-brand-text-muted">Module Name</label>
+              <input type="text" [(ngModel)]="newModuleName" placeholder="e.g. aircraft_types" class="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm font-mono text-brand-text focus:border-brand-primary transition-all">
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm font-bold uppercase tracking-tighter text-brand-text-muted">Values (Comma Separated)</label>
+              <textarea [(ngModel)]="newModuleValues" placeholder="e.g. A320, B737, A350, B787" rows="3" class="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm font-mono text-brand-text focus:border-brand-primary transition-all brand-scrollbar"></textarea>
+            </div>
+            <button (click)="saveModule()" [disabled]="!newModuleName() || !newModuleValues()" class="px-4 py-2 bg-brand-primary/20 text-brand-primary border border-brand-primary/50 rounded-lg text-sm font-bold uppercase tracking-tighter hover:bg-brand-primary hover:text-white transition-all disabled:opacity-50">
+              Save Dictionary
+            </button>
+          </div>
+
+          <!-- List -->
+          <div class="space-y-2">
+            @for (mod of socketService.customModules(); track mod.id) {
+              <div class="flex items-center justify-between p-3 bg-brand-surface border border-brand-border/50 rounded-lg group hover:border-brand-primary/30 transition-all">
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xs font-bold text-brand-text font-mono">custom.{{mod.name}}</span>
+                    @if (mod.source === 'static') {
+                      <span class="text-[10px] font-bold uppercase tracking-tighter text-brand-text-muted border border-brand-border rounded px-1.5 py-0.5">Built In</span>
+                    }
+                  </div>
+                  <div class="text-xs text-brand-text-muted truncate max-w-xl">{{mod.values.join(', ')}}</div>
+                </div>
+                @if (mod.source !== 'static') {
+                  <button (click)="socketService.deleteCustomModule(mod.id)" class="p-2 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                    <app-icon name="delete" [size]="16"></app-icon>
+                  </button>
+                }
+              </div>
+            } @empty {
+              <div class="text-center p-8 text-brand-text-muted text-sm border border-dashed border-brand-border rounded-xl">
+                No custom dictionaries created yet.
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+catalog:
+  rxjs: ^7.8.2
+  papaparse: ^5.5.3
+  '@types/papaparse': ^5.5.2

@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": false,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
+  }
+}

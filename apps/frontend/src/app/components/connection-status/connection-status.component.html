@@ -1,0 +1,172 @@
+<div
+  class="flex items-center gap-2 md:gap-4 p-1 px-1.5 md:p-1.5 md:px-2 rounded-2xl bg-brand-overlay backdrop-blur-md border border-brand-border shadow-lg shadow-black/5"
+>
+  <!-- API Status -->
+  <div
+    class="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-brand-surface/40 border border-brand-border/60 transition-all hover:bg-brand-surface/60 group"
+    [title]="connected() ? 'System API Connected' : (socketConnecting() ? 'System API Connecting...' : 'System API Disconnected')"
+  >
+    <app-icon
+      name="server"
+      [size]="16"
+      variant="solid"
+      class="transition-all duration-500"
+      [class.text-green-500]="connected()"
+      [class.text-(--status-connecting)]="!connected() && socketConnecting()"
+      [class.text-red-500]="!connected() && !socketConnecting()"
+      [class.animate-pulse]="!connected() && socketConnecting()"
+    ></app-icon>
+    <span
+      class="text-xs md:text-sm font-bold uppercase tracking-tighter transition-colors duration-500"
+      [class.text-brand-text]="connected()"
+      [class.text-(--status-connecting)]="!connected() && socketConnecting()"
+      [class.text-red-500/60]="!connected() && !socketConnecting()"
+      [class.animate-pulse]="!connected() && socketConnecting()"
+      >API</span
+    >
+  </div>
+
+  <!-- RabbitMQ Status -->
+  <div
+    class="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-brand-surface/40 border border-brand-border/60 transition-all hover:bg-brand-surface/60 group"
+    [class.opacity-40]="!rabbitAvailable()"
+    [title]="!rabbitAvailable() ? 'RabbitMQ Not Configured' : (rabbitConnected() ? 'RabbitMQ Broker Connected' : (rabbitConnecting() ? 'RabbitMQ Reconnecting...' : 'RabbitMQ Broker Disconnected'))"
+  >
+    <app-icon
+      name="rabbitmq"
+      [size]="16"
+      variant="solid"
+      class="transition-all duration-500"
+      [class.grayscale]="!rabbitAvailable()"
+      [class.text-blue-500]="rabbitAvailable() && connected() && rabbitConnected()"
+      [class.text-(--status-connecting)]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+      [class.text-red-500]="rabbitAvailable() && (!connected() || (!rabbitConnected() && !rabbitConnecting()))"
+      [class.text-brand-text/20]="!rabbitAvailable()"
+      [class.animate-pulse]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+    ></app-icon>
+    <div class="flex items-center gap-2">
+      <span
+        class="text-xs md:text-sm font-bold uppercase tracking-tighter transition-colors duration-500 hidden lg:inline"
+        [class.text-brand-text]="!rabbitAvailable() || (connected() && rabbitConnected())"
+        [class.text-(--status-connecting)]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+        [class.text-red-500/60]="rabbitAvailable() && (!connected() || (!rabbitConnected() && !rabbitConnecting()))"
+        [class.animate-pulse]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+        >RabbitMQ</span
+      >
+      <span
+        class="text-xs md:text-sm font-bold uppercase tracking-tighter transition-colors duration-500 lg:hidden"
+        [class.text-brand-text]="!rabbitAvailable() || (connected() && rabbitConnected())"
+        [class.text-(--status-connecting)]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+        [class.text-red-500/60]="rabbitAvailable() && (!connected() || (!rabbitConnected() && !rabbitConnecting()))"
+        [class.animate-pulse]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+        >RBT</span
+      >
+    </div>
+  </div>
+
+  <!-- Kafka Status -->
+  <div
+    class="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-brand-surface/40 border border-brand-border/60 transition-all hover:bg-brand-surface/60 group"
+    [class.opacity-40]="!kafkaAvailable()"
+    [title]="!kafkaAvailable() ? 'Kafka Not Configured' : (kafkaConnected() ? 'Kafka Broker Connected' : (kafkaConnecting() ? 'Kafka Reconnecting...' : 'Kafka Broker Disconnected'))"
+  >
+    <app-icon
+      name="kafka"
+      [size]="16"
+      variant="solid"
+      class="transition-all duration-500"
+      [class.grayscale]="!kafkaAvailable()"
+      [class.text-green-500]="kafkaAvailable() && connected() && kafkaConnected()"
+      [class.text-(--status-connecting)]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+      [class.text-red-500]="kafkaAvailable() && (!connected() || (!kafkaConnected() && !kafkaConnecting()))"
+      [class.text-brand-text/20]="!kafkaAvailable()"
+      [class.animate-pulse]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+    ></app-icon>
+    <div class="flex items-center gap-2">
+      <span
+        class="text-xs md:text-sm font-bold uppercase tracking-tighter transition-colors duration-500 hidden lg:inline"
+        [class.text-brand-text]="!kafkaAvailable() || (connected() && kafkaConnected())"
+        [class.text-(--status-connecting)]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+        [class.text-red-500/60]="kafkaAvailable() && (!connected() || (!kafkaConnected() && !kafkaConnecting()))"
+        [class.animate-pulse]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+        >Kafka</span
+      >
+      <span
+        class="text-xs md:text-sm font-bold uppercase tracking-tighter transition-colors duration-500 lg:hidden"
+        [class.text-brand-text]="!kafkaAvailable() || (connected() && kafkaConnected())"
+        [class.text-(--status-connecting)]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+        [class.text-red-500/60]="kafkaAvailable() && (!connected() || (!kafkaConnected() && !kafkaConnecting()))"
+        [class.animate-pulse]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+        >KFK</span
+      >
+    </div>
+  </div>
+
+  <!-- Schemas Volume -->
+  <div
+    (click)="setViewMode('schemas')"
+    class="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl border transition-all cursor-pointer group"
+    [class.bg-brand-surface/40]="viewMode() !== 'schemas'"
+    [class.bg-brand-primary/10]="viewMode() === 'schemas'"
+    [class.border-brand-border/60]="viewMode() !== 'schemas'"
+    [class.border-brand-primary/40]="viewMode() === 'schemas'"
+    [class.shadow-inner]="viewMode() === 'schemas'"
+    [title]="schemas().length + ' Schemas Loaded'"
+  >
+    <app-icon
+      name="account_tree"
+      [size]="16"
+      variant="solid"
+      class="transition-all duration-500 text-brand-primary"
+    ></app-icon>
+    <div class="flex items-center gap-2">
+      <span
+        class="text-xs md:text-xs font-bold text-brand-text uppercase tracking-tighter hidden lg:inline"
+        >Schemas</span
+      >
+      <span
+        class="text-xs md:text-xs font-bold text-brand-text uppercase tracking-tighter lg:hidden"
+        >SCH</span
+      >
+      <span
+        class="min-w-[20px] px-1.5 py-0.5 rounded bg-brand-primary/20 text-brand-primary text-xs md:text-xs font-bold border border-brand-primary/30"
+      >
+        {{ schemas().length }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Flows Volume -->
+  <div
+    (click)="setViewMode('flows')"
+    class="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl border transition-all cursor-pointer group"
+    [class.bg-brand-surface/40]="viewMode() !== 'flows'"
+    [class.bg-brand-primary/10]="viewMode() === 'flows'"
+    [class.border-brand-border/60]="viewMode() !== 'flows'"
+    [class.border-brand-primary/40]="viewMode() === 'flows'"
+    [class.shadow-inner]="viewMode() === 'flows'"
+    [title]="flows().length + ' Flows Designed'"
+  >
+    <app-icon
+      name="route"
+      [size]="16"
+      variant="solid"
+      class="transition-all duration-500 text-brand-accent"
+    ></app-icon>
+    <div class="flex items-center gap-2">
+      <span
+        class="text-xs md:text-xs font-bold text-brand-text uppercase tracking-tighter hidden lg:inline"
+        >Flows</span
+      >
+      <span
+        class="text-xs md:text-xs font-bold text-brand-text uppercase tracking-tighter lg:hidden"
+        >FLW</span
+      >
+      <span
+        class="min-w-[20px] px-1.5 py-0.5 rounded bg-brand-accent/20 text-brand-accent text-xs md:text-xs font-bold border border-brand-accent/30"
+      >
+        {{ flows().length }}
+      </span>
+    </div>
+  </div>
+</div>

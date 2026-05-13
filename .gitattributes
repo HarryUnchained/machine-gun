@@ -1,0 +1,29 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Force LF line endings for shell scripts (Linux/Mac style)
+*.sh text eol=lf
+
+# Force LF line endings for JSON, YAML, and config files
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Force CRLF line endings for Windows batch scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Do not modify binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.7z binary
+*.gz binary
+*.tar binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

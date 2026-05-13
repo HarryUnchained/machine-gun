@@ -1,0 +1,268 @@
+<div
+  class="fixed inset-0 z-100 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+  <!-- Modal Container -->
+  <div [class.w-full]="true" [class.h-full]="true" [class.sm:max-w-4xl]="!isMaximized()"
+    [class.sm:h-auto]="!isMaximized()" [class.sm:max-h-[90vh]]="!isMaximized()" [class.sm:rounded-3xl]="!isMaximized()"
+    [class.max-w-none]="isMaximized()" [class.max-h-none]="isMaximized()" [class.rounded-none]="isMaximized()"
+    [class.sm:rounded-none]="isMaximized()"
+    class="bg-brand-surface/90 backdrop-blur-xl border-t sm:border border-brand-border shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ease-in-out">
+    <!-- Header -->
+    <div
+      class="p-4 md:p-6 border-b border-brand-border flex items-center justify-between bg-gradient-to-r from-brand-primary/20 to-brand-accent/20">
+      <div class="flex items-center gap-3">
+        <div
+          class="p-2.5 md:p-3 bg-brand-primary rounded-xl md:rounded-2xl shadow-lg shadow-brand-primary/30 flex items-center justify-center transition-transform hover:scale-105">
+          <app-icon name="account_tree" [size]="20" class="md:!w-6 md:!h-6 text-brand-primary-fg"></app-icon>
+        </div>
+        <div>
+          <h2 class="text-xl md:text-2xl font-extrabold text-brand-text tracking-tight">
+            Schema Builder
+          </h2>
+          <p class="text-brand-accent/60 text-xs md:text-sm uppercase tracking-tighter font-bold hidden sm:block">
+            Structure Editor
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button (click)="showHelp.update(v => !v)"
+          class="p-2.5 hover:bg-brand-overlay rounded-xl transition-colors text-brand-text-muted hover:text-brand-primary flex items-center justify-center border border-transparent hover:border-brand-border group"
+          [title]="showHelp() ? 'Hide Help' : 'How it works'">
+          <app-icon name="info" [size]="20" class="group-hover:scale-110 transition-transform"></app-icon>
+        </button>
+        <button (click)="isMaximized.update(v => !v)"
+          class="p-2.5 hover:bg-brand-overlay rounded-xl transition-colors text-brand-text-muted hover:text-brand-text flex items-center justify-center border border-transparent hover:border-brand-border"
+          [title]="isMaximized() ? 'Shrink' : 'Maximize'">
+          <app-icon [name]="isMaximized() ? 'shrink' : 'expand'" [size]="20"></app-icon>
+        </button>
+        <button (click)="close.emit()"
+          class="p-2.5 hover:bg-brand-overlay rounded-xl transition-colors text-brand-text-muted hover:text-brand-text flex items-center justify-center border border-transparent hover:border-brand-border"
+          title="Close">
+          <app-icon name="close" [size]="24"></app-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 brand-scrollbar">
+      @if (showHelp()) {
+      <div
+        class="p-6 bg-brand-surface border border-brand-border/40 rounded-3xl animate-in fade-in slide-in-from-top-4 duration-500 shadow-2xl relative overflow-hidden group">
+        <div class="absolute inset-0 bg-linear-to-br from-brand-primary/5 to-brand-accent/5 pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col gap-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-brand-primary/10 rounded-xl text-brand-primary">
+                <app-icon name="account_tree" [size]="20"></app-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-brand-text tracking-tight uppercase">
+                  Schema Architecture Guide
+                </h3>
+                <p class="text-sm text-brand-text-muted">
+                  Master the art of high-fidelity event simulation
+                </p>
+              </div>
+            </div>
+            <button (click)="showHelp.set(false)"
+              class="p-2 hover:bg-brand-overlay rounded-lg text-brand-text-muted transition-colors">
+              <app-icon name="close" [size]="18"></app-icon>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Column 1: Payload -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-2 text-brand-accent">
+                <app-icon name="data_object" [size]="18"></app-icon>
+                <span class="text-sm font-bold uppercase tracking-tighter">JSON Construction</span>
+              </div>
+              <p class="text-sm text-brand-text-muted leading-relaxed">
+                Field keys define the property names in your final payload. Use
+                <strong>Nested Objects</strong> and <strong>Object Arrays</strong> to create
+                complex hierarchical structures up to 7 levels deep.
+              </p>
+            </div>
+
+            <!-- Column 2: Generation -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-2 text-brand-primary">
+                <app-icon name="regex" [size]="18"></app-icon>
+                <span class="text-sm font-bold uppercase tracking-tighter">Data Synthesis</span>
+              </div>
+              <p class="text-sm text-brand-text-muted leading-relaxed">
+                Choose from 10+ generator types. Use <strong>Faker</strong> for realistic
+                names/emails, <strong>Regex</strong> for strict patterns, or
+                <strong>Custom Templates</strong> to combine multiple generators into one string.
+              </p>
+            </div>
+
+            <!-- Column 3: Telemetry -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-2 text-brand-accent">
+                <app-icon name="route" [size]="18"></app-icon>
+                <span class="text-sm font-bold uppercase tracking-tighter">Telemetry Routing</span>
+              </div>
+              <p class="text-sm text-brand-text-muted leading-relaxed">
+                Configure destinations like <strong>Kafka</strong> or <strong>RabbitMQ</strong>. Set default frequencies
+                and routing keys to ensure your events land exactly where they are needed.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-brand-border/30 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></div>
+                <span class="text-sm font-bold text-brand-text-muted uppercase">Real-time Preview Enabled</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-brand-accent"></div>
+                <span class="text-sm font-bold text-brand-text-muted uppercase">OnPush Reactivity</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- General Info -->
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div class="space-y-2">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1">Schema Name <span
+              class="text-red-500">*</span></label>
+          <input #nameInput [value]="schema().name" (input)="updateSchema({ name: nameInput.value })"
+            placeholder="e.g. User Signup Event"
+            class="w-full bg-brand-overlay border border-brand-border rounded-2xl px-5 py-3.5 md:py-4 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all placeholder:text-brand-text-muted/70 text-sm md:text-base" />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1">Schema ID <span
+              class="text-red-500">*</span></label>
+          <input #idInput [value]="schema().id" (input)="updateSchema({ id: idInput.value })"
+            placeholder="e.g. user-signup"
+            class="w-full bg-brand-overlay border border-brand-border rounded-2xl px-5 py-3.5 md:py-4 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all placeholder:text-brand-text-muted/70 text-sm md:text-base" />
+          @if (staticOverrideInfo()) {
+          <div
+            class="mt-3 p-4 bg-brand-warning/10 border border-brand-warning/20 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2 duration-300">
+            <app-icon name="warning" [size]="20" class="text-brand-warning mt-1"></app-icon>
+            <div class="space-y-1">
+              <p class="text-sm font-bold text-brand-warning uppercase tracking-wider">
+                System Override Detected
+              </p>
+              <p class="text-sm text-brand-text-muted leading-relaxed">
+                This ID matches the system blueprint
+                <strong class="text-brand-warning">{{ staticOverrideInfo()?.name }}</strong>. Saving will create a local
+                override rather than a new standalone schema.
+              </p>
+            </div>
+          </div>
+          }
+
+          @if (dynamicCollisionInfo()) {
+          <div
+            class="mt-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2 duration-300">
+            <app-icon name="info" [size]="20" class="text-blue-400 mt-1"></app-icon>
+            <div class="space-y-1">
+              <p class="text-sm font-bold text-blue-400 uppercase tracking-wider">
+                Conflict: Existing Custom Schema
+              </p>
+              <p class="text-sm text-brand-text-muted leading-relaxed">
+                This ID matches your existing schema
+                <strong class="text-blue-400">{{ dynamicCollisionInfo()?.name }}</strong>. Saving will overwrite your
+                previous custom definition.
+              </p>
+            </div>
+          </div>
+          }
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1">Description</label>
+          <textarea #descInput [value]="schema().description || ''"
+            (input)="updateSchema({ description: descInput.value })"
+            placeholder="Describe what this event represents in the business domain..." rows="2"
+            class="w-full bg-brand-overlay border border-brand-border rounded-2xl px-5 py-3.5 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all placeholder:text-brand-text-muted/70 text-sm md:text-base resize-none"></textarea>
+        </div>
+      </section>
+
+      <!-- Destination Configuration -->
+      <app-destination-config [destination]="schema().destination" [schemaFields]="schema().fields" [rpcResponse]="rpcResponse()" [isValid]="isValid()"
+        (destinationChange)="updateDestination($event)" (testRpc)="handleTestRpc()"></app-destination-config>
+
+      <!-- Field Builder -->
+      <section class="space-y-4 pt-4 border-t border-brand-border/30">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div
+            class="flex items-center gap-2 text-brand-text/90 font-bold text-sm md:text-base uppercase tracking-tighter">
+            <app-icon name="schema" [size]="16" class="text-brand-primary"></app-icon>
+            Payload Fields <span class="text-red-500 ml-1">*</span>
+          </div>
+
+          <!-- Drill-down Breadcrumbs -->
+          <app-breadcrumb [path]="navigationPath()" (navigate)="navigateTo($event)" class="flex-1"></app-breadcrumb>
+
+          <div class="flex gap-2">
+            <button (click)="importFileInput.click()"
+              class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-overlay hover:bg-brand-border border border-brand-border rounded-xl text-xs text-brand-text transition-all"
+              title="Import schema from a JSON file">
+              <app-icon name="upload" [size]="16"></app-icon>
+              JSON Import
+            </button>
+            <input #importFileInput type="file" (change)="onFileSelected($event)" class="hidden" accept=".json" />
+            <button (click)="addField()"
+              class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-primary hover:opacity-90 rounded-xl text-xs text-brand-primary-fg font-bold transition-all shadow-lg shadow-brand-primary/20">
+              <app-icon name="add" [size]="16"></app-icon>
+              Add Field
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          @for (field of currentFields(); track $index) {
+          <app-field-row [field]="field" [index]="$index" [fieldTypeOptions]="fieldTypeOptions"
+            [fakerHints]="fakerHints()" [customModules]="customModules()"
+            [groupedCustomTemplates]="groupedCustomTemplates()" [style.animation-delay]="$index * 50 + 'ms'"
+            (fieldUpdate)="updateField($index, $event)" (fieldOptionsUpdate)="updateFieldOptions($index, $event)"
+            (remove)="removeField($index)" (openCustomData)="customDataModalMode.set($event)"
+            (drillDown)="drillDown(field)"></app-field-row>
+          }
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <div
+      class="p-5 md:p-6 border-t border-brand-border bg-brand-overlay flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex-1 w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4">
+        <button (click)="close.emit()"
+          class="text-brand-text-muted hover:text-brand-text transition-colors font-bold px-4 py-2 text-sm uppercase tracking-tighter">
+          DISCARD CHANGES
+        </button>
+        @if (!isValid()) {
+        <span
+          class="text-sm text-red-500/80 font-bold uppercase tracking-tight flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+          <app-icon name="close" [size]="16"></app-icon>
+          {{ validationMessage() }}
+        </span>
+        }
+      </div>
+      <button (click)="save()" [disabled]="!isValid()"
+        class="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-5 sm:py-4 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-white font-bold transition-all shadow-xl shadow-green-500/20">
+        <app-icon name="save" [size]="20" variant="solid"></app-icon>
+        SAVE SCHEMA
+      </button>
+    </div>
+  </div>
+</div>
+
+<datalist id="faker-hints">
+  @for (hint of fakerHints(); track hint) {
+  <option [value]="hint"></option>
+  }
+</datalist>
+
+@if (customDataModalMode() !== null) {
+<app-custom-data-manager [mode]="customDataModalMode() || 'all'"
+  (close)="customDataModalMode.set(null)"></app-custom-data-manager>
+}

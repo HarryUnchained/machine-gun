@@ -1,0 +1,641 @@
+<section
+  class="p-5 md:p-6 bg-brand-overlay rounded-3xl border border-brand-border space-y-5 md:space-y-6"
+>
+  <div
+    class="flex items-center gap-2 text-brand-text/90 font-bold text-sm md:text-base uppercase tracking-tighter"
+  >
+    <app-icon name="route" [size]="16" class="text-brand-accent"></app-icon>
+    Destination Configuration
+  </div>
+
+  <!-- Protocol + Target Row -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+    <div class="space-y-2">
+      <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+        >Protocol</label
+      >
+      <app-select
+        [options]="protocolOptions"
+        [value]="destination().transport"
+        (change)="updateTransport($event)"
+      ></app-select>
+    </div>
+
+    @if (destination().transport === TransportType.RABBITMQ) {
+      <div class="space-y-2">
+        <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+          >Target Type</label
+        >
+        <app-select
+          [options]="targetTypeOptions"
+          [value]="destination().targetType || 'exchange'"
+          (change)="update({ targetType: $event })"
+        ></app-select>
+      </div>
+      <div class="space-y-2 md:col-span-2">
+        <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+          >Endpoint (Name)</label
+        >
+        <input
+          #endpointInput
+          [value]="destination().target"
+          (input)="update({ target: endpointInput.value })"
+          placeholder="e.g. events.user.created"
+          class="w-full bg-brand-overlay border border-brand-border rounded-xl px-5 py-3 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all placeholder:text-brand-text-muted/70 text-sm"
+        />
+      </div>
+    } @else {
+      <div class="space-y-2 md:col-span-3">
+        <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+          >Topic Name <span class="text-red-500">*</span></label
+        >
+        <input
+          #kafkaEndpointInput
+          [value]="destination().target"
+          (input)="update({ target: kafkaEndpointInput.value })"
+          placeholder="e.g. events.user.created"
+          class="w-full bg-brand-overlay border border-brand-border rounded-xl px-5 py-3 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all placeholder:text-brand-text-muted/70 text-sm"
+        />
+        <p class="text-[11px] text-brand-text-muted ml-1">
+          Kafka publishing only needs a topic. The controls below are limited to what the backend publisher can actually use.
+        </p>
+      </div>
+    }
+  </div>
+
+  <!-- RabbitMQ-specific options -->
+  @if (destination().transport === TransportType.RABBITMQ) {
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between ml-1">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+            >Routing Key</label
+          >
+          @if (destination().targetType === 'queue') {
+            <div class="group relative">
+              <app-icon name="info" [size]="12" class="text-brand-accent cursor-help"></app-icon>
+              <div
+                class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-brand-surface border border-brand-border rounded-lg text-[10px] leading-tight text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl normal-case font-normal"
+              >
+                When targeting a Queue directly (via Default Exchange), the Routing Key is fixed to the Queue Name.
+              </div>
+            </div>
+          }
+        </div>
+        <input
+          #routingKeyInput
+          [value]="destination().targetType === 'queue' ? (destination().target || '') : (destination().routingKey || '')"
+          [disabled]="destination().targetType === 'queue'"
+          (input)="update({ routingKey: routingKeyInput.value })"
+          [placeholder]="destination().targetType === 'queue' ? 'Auto-filled' : 'Optional'"
+          [class.opacity-50]="destination().targetType === 'queue'"
+          [class.cursor-not-allowed]="destination().targetType === 'queue'"
+          class="w-full bg-brand-overlay border border-brand-border rounded-xl px-5 py-3 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all placeholder:text-brand-text-muted/70 text-sm"
+        />
+      </div>
+      @if (destination().targetType === 'exchange') {
+        <div class="space-y-2">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+            >Exchange Type</label
+          >
+          <app-select
+            [options]="exchangeTypeOptions"
+            [value]="destination().exchangeType || 'direct'"
+            (change)="update({ exchangeType: $event })"
+          ></app-select>
+        </div>
+      }
+    </div>
+
+    <!-- RPC, Assertion, Durable & Auto-Delete Toggles -->
+    <div class="pt-4 border-t border-brand-border/30 flex flex-wrap items-center gap-x-8 gap-y-4">
+      <!-- RPC Toggle -->
+      <div class="flex items-center gap-3">
+        <label class="relative inline-flex items-center cursor-pointer group">
+          <input
+            #rpcInput
+            type="checkbox"
+            class="sr-only peer"
+            [checked]="destination().isRpc"
+            (change)="update({ isRpc: rpcInput.checked })"
+          />
+          <div
+            class="w-11 h-6 bg-brand-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary shadow-sm"
+          ></div>
+          <span class="ml-3 text-xs font-bold text-brand-text uppercase tracking-tight"
+            >Enable RPC Flow</span
+          >
+        </label>
+        <div class="group relative">
+          <app-icon name="info" [size]="14" class="text-brand-text-muted cursor-help"></app-icon>
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-brand-surface border border-brand-border rounded-lg text-xs text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl"
+          >
+            Treats messages as Request/Response. Works with both Exchanges and direct Queues.
+          </div>
+        </div>
+      </div>
+
+      <!-- RPC Test Button -->
+      @if (destination().isRpc) {
+        <div class="group relative">
+          <button
+            (click)="testRpc.emit()"
+            [disabled]="!isValid()"
+            [class.opacity-50]="!isValid()"
+            [class.cursor-not-allowed]="!isValid()"
+            class="flex items-center gap-2 px-3 py-1.5 bg-brand-accent/10 border border-brand-accent/20 text-brand-accent hover:bg-brand-accent hover:text-white rounded-lg transition-all animate-in fade-in zoom-in duration-300 group/btn"
+          >
+            <app-icon name="send" [size]="14" class="group-hover/btn:translate-x-0.5 transition-transform"></app-icon>
+            <span class="text-xs font-bold uppercase tracking-tight">Test RPC Call</span>
+          </button>
+          
+          <!-- Hint Tooltip -->
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-brand-surface border border-brand-border rounded-xl text-[10px] leading-relaxed text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl normal-case font-normal"
+          >
+            @if (!isValid()) {
+              <div class="flex items-center gap-2 text-red-400 mb-1 font-bold uppercase tracking-tighter">
+                <app-icon name="warning" [size]="12"></app-icon>
+                Incomplete Schema
+              </div>
+              Please fill the required fields to enable testing.
+            } @else {
+              <div class="flex items-center gap-2 text-brand-accent mb-1 font-bold uppercase tracking-tighter">
+                <app-icon name="bolt" [size]="12"></app-icon>
+                Trigger Execution
+              </div>
+              Sends a single sample message to the broker and waits for a response from your remote service.
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Assertion Toggle -->
+      <div class="flex items-center gap-3">
+        <label class="relative inline-flex items-center cursor-pointer group">
+          <input
+            #assertInput
+            type="checkbox"
+            class="sr-only peer"
+            [checked]="destination().assertTarget"
+            (change)="update({ assertTarget: assertInput.checked })"
+          />
+          <div
+            class="w-11 h-6 bg-brand-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary shadow-sm"
+          ></div>
+          <span class="ml-3 text-xs font-bold text-brand-text uppercase tracking-tight"
+            >Assert on Publish</span
+          >
+        </label>
+        <div class="group relative">
+          <app-icon name="info" [size]="14" class="text-brand-text-muted cursor-help"></app-icon>
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-brand-surface border border-brand-border rounded-lg text-xs text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl"
+          >
+            Automatically creates the Target endpoint (Exchange/Queue) if it doesn't exist.
+          </div>
+        </div>
+      </div>
+
+      <!-- Durability Toggle -->
+      <div class="flex items-center gap-3">
+        <label class="relative inline-flex items-center cursor-pointer group">
+          <input
+            #durableInput
+            type="checkbox"
+            class="sr-only peer"
+            [checked]="destination().durableTarget ?? true"
+            (change)="update({ durableTarget: durableInput.checked })"
+          />
+          <div
+            class="w-11 h-6 bg-brand-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary shadow-sm"
+          ></div>
+          <span class="ml-3 text-xs font-bold text-brand-text uppercase tracking-tight"
+            >Durable</span
+          >
+        </label>
+        <div class="group relative">
+          <app-icon name="info" [size]="14" class="text-brand-text-muted cursor-help"></app-icon>
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-brand-surface border border-brand-border rounded-lg text-xs text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl"
+          >
+            If enabled, the endpoint will survive a broker restart.
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto-Delete Toggle -->
+      <div class="flex items-center gap-3">
+        <label class="relative inline-flex items-center cursor-pointer group">
+          <input
+            #autoDeleteInput
+            type="checkbox"
+            class="sr-only peer"
+            [checked]="destination().autoDelete"
+            (change)="update({ autoDelete: autoDeleteInput.checked })"
+          />
+          <div
+            class="w-11 h-6 bg-brand-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary shadow-sm"
+          ></div>
+          <span class="ml-3 text-xs font-bold text-brand-text uppercase tracking-tight"
+            >Auto-Delete</span
+          >
+        </label>
+        <div class="group relative">
+          <app-icon name="info" [size]="14" class="text-brand-text-muted cursor-help"></app-icon>
+          <div
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-brand-surface border border-brand-border rounded-lg text-xs text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl"
+          >
+            The endpoint is deleted when there are no more consumers (Queue) or bindings (Exchange).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RPC Response Console -->
+    @if (destination().isRpc && rpcResponse()) {
+      <div class="mt-4 p-4 bg-brand-surface border border-brand-accent/20 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span class="text-xs font-bold text-brand-accent uppercase tracking-tighter">RPC Response Console</span>
+          </div>
+          <span class="text-[10px] text-brand-text-muted font-mono">Real-time Feedback</span>
+        </div>
+        <div class="bg-black/20 rounded-xl p-3 border border-brand-border/30 overflow-hidden">
+          <pre class="text-xs font-mono text-brand-accent/90 overflow-x-auto brand-scrollbar whitespace-pre-wrap max-h-40">{{ rpcResponse() | json }}</pre>
+        </div>
+        <p class="mt-2 text-[10px] text-brand-text-muted flex items-center gap-1.5">
+          <app-icon name="info" [size]="12"></app-icon>
+          This is the raw payload returned by the service listening on 
+          <span class="text-brand-accent font-bold">{{ destination().targetType === 'queue' ? 'Queue: ' + destination().target : 'Exchange: ' + destination().target }}</span>
+        </p>
+      </div>
+    }
+
+    <!-- Message Options -->
+    <div class="pt-6 border-t border-brand-border/30 space-y-5">
+      <div
+        class="flex items-center gap-2 text-brand-text/90 font-bold text-sm uppercase tracking-tighter"
+      >
+        <app-icon name="options" [size]="14" class="text-brand-accent"></app-icon>
+        Message Options
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="space-y-2">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+            >Message TTL (ms)</label
+          >
+          <app-stepper
+            [value]="destination().messageTtl ?? null"
+            (valueChange)="update({ messageTtl: $event ?? undefined })"
+            [step]="1000"
+            [min]="0"
+            placeholder="e.g. 60000"
+          ></app-stepper>
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+            >Priority (0-255)</label
+          >
+          <app-stepper
+            [value]="destination().priority ?? null"
+            (valueChange)="update({ priority: $event ?? undefined })"
+            [step]="1"
+            [min]="0"
+            placeholder="e.g. 10"
+          ></app-stepper>
+        </div>
+        @if (destination().isRpc) {
+          <div class="space-y-2">
+            <label
+              class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+              >RPC Timeout (ms)</label
+            >
+            <app-stepper
+              [value]="destination().rpcTimeout ?? null"
+              (valueChange)="update({ rpcTimeout: $event ?? undefined })"
+              [step]="1000"
+              [min]="0"
+              placeholder="e.g. 5000"
+            ></app-stepper>
+          </div>
+        }
+      </div>
+
+      <!-- Custom Headers -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+            >Custom Headers</label
+          >
+          <button
+            (click)="addHeader()"
+            class="text-xs bg-brand-surface border border-brand-border px-2 py-1 rounded text-brand-text hover:bg-brand-overlay transition-colors uppercase font-bold tracking-tight"
+          >
+            + Add Header
+          </button>
+        </div>
+        @for (header of customHeaders(); track $index) {
+          <div class="flex gap-2 items-center relative">
+            <!-- Key Input -->
+            <div class="flex-1 relative">
+              <input
+                #keyInput
+                [value]="header.key"
+                (input)="updateHeader($index, { key: keyInput.value })"
+                (focus)="openHeaderAutocomplete($index, 'key', keyInput.value)"
+                (blur)="activeHeaderIndex() === $index && headerAutocompleteType() === 'key' ? activeHeaderIndex.set(null) : null"
+                placeholder="Key (e.g. x-retry)"
+                class="w-full bg-brand-overlay border border-brand-border rounded-lg px-3 py-1.5 text-sm font-mono focus:border-brand-primary/50 transition-all"
+              />
+              <!-- Key Autocomplete -->
+              @if (activeHeaderIndex() === $index && headerAutocompleteType() === 'key' && filteredHeaderKeys().length > 0) {
+                <div 
+                  class="absolute z-100 top-full left-0 mt-1 w-full max-h-40 overflow-y-auto bg-brand-overlay/95 backdrop-blur-xl border border-brand-primary/30 rounded-xl shadow-2xl p-1 brand-scrollbar animate-in fade-in zoom-in-95"
+                  (mousedown)="$event.preventDefault()"
+                >
+                  @for (key of filteredHeaderKeys(); track key) {
+                    <button
+                      (click)="selectHeaderHint(key)"
+                      class="w-full text-left px-2 py-1.5 text-xs font-mono text-brand-text/90 hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-colors truncate"
+                    >
+                      {{ key }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Value Input -->
+            <div class="flex-1 relative">
+              <input
+                #valInput
+                [value]="header.value"
+                (input)="updateHeader($index, { value: valInput.value })"
+                (focus)="openHeaderAutocomplete($index, 'value', valInput.value)"
+                (blur)="activeHeaderIndex() === $index && headerAutocompleteType() === 'value' ? activeHeaderIndex.set(null) : null"
+                placeholder="Value"
+                class="w-full bg-brand-overlay border border-brand-border rounded-lg px-3 py-1.5 text-sm font-mono focus:border-brand-primary/50 transition-all"
+              />
+              <!-- Value Autocomplete -->
+              @if (activeHeaderIndex() === $index && headerAutocompleteType() === 'value' && filteredHeaderValues().length > 0) {
+                <div 
+                  class="absolute z-100 top-full left-0 mt-1 w-full max-h-40 overflow-y-auto bg-brand-overlay/95 backdrop-blur-xl border border-brand-primary/30 rounded-xl shadow-2xl p-1 brand-scrollbar animate-in fade-in zoom-in-95"
+                  (mousedown)="$event.preventDefault()"
+                >
+                  @for (val of filteredHeaderValues(); track val) {
+                    <button
+                      (click)="selectHeaderHint(val)"
+                      class="w-full text-left px-2 py-1.5 text-xs font-mono text-brand-text/90 hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-colors truncate"
+                    >
+                      {{ val }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <button
+              (click)="removeHeader($index)"
+              class="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
+            >
+              <app-icon name="close" [size]="14"></app-icon>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Queue Arguments (DLX) -->
+      @if (destination().targetType === 'queue' && destination().assertTarget) {
+        <div class="pt-4 border-t border-brand-border/30 space-y-4">
+          <div
+            class="flex items-center gap-2 text-xs text-brand-text-muted font-bold uppercase tracking-tighter"
+          >
+            <app-icon name="queue" [size]="12"></app-icon>
+            Queue Arguments (DLX Config)
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label
+                class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+                >DLX Name (x-dead-letter-exchange)</label
+              >
+              <input
+                #dlxInput
+                [value]="destination().deadLetterExchange || ''"
+                (input)="update({ deadLetterExchange: dlxInput.value })"
+                placeholder="e.g. dlx.exchange"
+                class="w-full bg-brand-overlay border border-brand-border rounded-xl px-4 py-2 text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all text-xs"
+              />
+            </div>
+            <div class="space-y-2">
+              <label
+                class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+                >DLQ Routing Key</label
+              >
+              <input
+                #dlqInput
+                [value]="destination().deadLetterRoutingKey || ''"
+                (input)="update({ deadLetterRoutingKey: dlqInput.value })"
+                placeholder="Optional"
+                class="w-full bg-brand-overlay border border-brand-border rounded-xl px-4 py-2 text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all text-xs"
+              />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Kafka Partition Key (Kafka transport only) -->
+  @if (destination().transport === TransportType.KAFKA) {
+    <div
+      class="pt-5 border-t border-brand-border/30 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div class="space-y-2">
+          <label class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted ml-1"
+            >Producer Partition</label
+          >
+          <app-stepper
+            [value]="destination().kafkaPartition ?? null"
+            (valueChange)="update({ kafkaPartition: $event ?? undefined })"
+            [step]="1"
+            [min]="0"
+            placeholder="Auto"
+          ></app-stepper>
+          <p class="text-[11px] text-brand-text-muted ml-1">
+            Leave empty to let Kafka choose the partition from the key or round-robin behavior.
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-brand-border/30 flex flex-wrap items-center gap-x-8 gap-y-4">
+        <div class="flex items-center gap-3">
+          <label class="relative inline-flex items-center cursor-pointer group">
+            <input
+              #kafkaAssertInput
+              type="checkbox"
+              class="sr-only peer"
+              [checked]="destination().assertTarget"
+              (change)="update({ assertTarget: kafkaAssertInput.checked })"
+            />
+            <div
+              class="w-11 h-6 bg-brand-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary shadow-sm"
+            ></div>
+            <span class="ml-3 text-xs font-bold text-brand-text uppercase tracking-tight"
+              >Auto-Create Topic</span
+            >
+          </label>
+          <div class="group relative">
+            <app-icon name="info" [size]="14" class="text-brand-text-muted cursor-help"></app-icon>
+            <div
+              class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-brand-surface border border-brand-border rounded-lg text-xs text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl"
+            >
+              Kafka does not use Rabbit-style exchange or queue assertion. This simply means “try to ensure the topic exists.”
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="flex items-center gap-2 text-brand-text/90 font-bold text-sm uppercase tracking-tighter"
+      >
+        <app-icon name="key" [size]="14" class="text-brand-accent"></app-icon>
+        Partition Key
+      </div>
+
+      <!-- Mode selector -->
+      <div
+        class="flex items-center bg-brand-surface/30 p-1 rounded-lg border border-brand-border/30 w-fit gap-0.5"
+      >
+        @for (
+          mode of [
+            { v: 'none', l: 'None' },
+            { v: 'uuid', l: 'UUID' },
+            { v: 'field', l: 'Field' },
+            { v: 'custom', l: 'Custom' },
+          ];
+          track mode.v
+        ) {
+          <button
+            (click)="setKafkaKeyMode($any(mode.v))"
+            [class.bg-brand-primary]="(destination().kafkaKey?.mode ?? 'none') === mode.v"
+            [class.text-white]="(destination().kafkaKey?.mode ?? 'none') === mode.v"
+            class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase text-brand-text-muted"
+          >
+            {{ mode.l }}
+          </button>
+        }
+      </div>
+
+      <!-- None: description -->
+      @if ((destination().kafkaKey?.mode ?? 'none') === 'none') {
+        <p class="text-xs text-brand-text-muted">
+          No partition key — messages will be distributed across partitions in round-robin.
+        </p>
+      }
+
+      <!-- UUID: description -->
+      @if (destination().kafkaKey?.mode === 'uuid') {
+        <p class="text-xs text-brand-text-muted">
+          A fresh <span class="font-mono">crypto.randomUUID()</span> is generated as the key for
+          every message.
+        </p>
+      }
+
+      <!-- Field: dropdown + free text + live preview -->
+      @if (destination().kafkaKey?.mode === 'field') {
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <span
+              class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted shrink-0"
+              >Field Path</span
+            >
+            <div class="flex-1 relative">
+              <input
+                #fieldPathInput
+                type="text"
+                list="kafka-field-paths"
+                [value]="destination().kafkaKey?.fieldPath ?? ''"
+                (input)="updateKafkaKey({ fieldPath: fieldPathInput.value })"
+                placeholder="e.g. order.id"
+                class="w-full bg-brand-surface/50 border border-brand-border/50 rounded-lg px-3 py-2 text-xs text-brand-text font-mono focus:outline-none focus:border-brand-primary/50 transition-all"
+              />
+              <datalist id="kafka-field-paths">
+                @for (path of fieldPaths(); track path) {
+                  <option [value]="path"></option>
+                }
+              </datalist>
+            </div>
+          </div>
+          @if (!destination().kafkaKey?.fieldPath?.trim()) {
+            <p class="text-xs text-red-400">
+              A field path is required when the Kafka key mode is set to Field.
+            </p>
+          }
+
+          <!-- Live preview + warnings -->
+          @if (destination().kafkaKey?.fieldPath) {
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+                >Preview</span
+              >
+              @if (kafkaKeyPreviewWarning() === 'null') {
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full text-sm font-bold uppercase tracking-tight"
+                >
+                  <app-icon name="warning" [size]="10"></app-icon>
+                  null / missing — will use random partition
+                </span>
+              } @else if (kafkaKeyPreviewWarning() === 'object') {
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full text-sm font-bold uppercase tracking-tight"
+                >
+                  <app-icon name="warning" [size]="10"></app-icon>
+                  object/array — will be JSON-stringified
+                </span>
+              } @else if (kafkaKeyPreview() !== null) {
+                <span
+                  class="font-mono text-xs text-brand-accent bg-brand-accent/10 px-2 py-0.5 rounded-md"
+                >
+                  "{{ kafkaKeyPreview() }}"
+                </span>
+              } @else {
+                <span class="text-xs text-brand-text-muted italic"
+                  >Generate a sample to preview the resolved value</span
+                >
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Custom: static string input -->
+      @if (destination().kafkaKey?.mode === 'custom') {
+        <div class="flex items-center gap-3">
+          <span
+            class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted shrink-0"
+            >Value</span
+          >
+          <input
+            #customKeyInput
+            type="text"
+            [value]="destination().kafkaKey?.customValue ?? ''"
+            (input)="updateKafkaKey({ customValue: customKeyInput.value })"
+            placeholder="e.g. tenant-123"
+            class="flex-1 bg-brand-surface/50 border border-brand-border/50 rounded-lg px-3 py-2 text-xs text-brand-text font-mono focus:outline-none focus:border-brand-primary/50 transition-all"
+          />
+        </div>
+        @if (!destination().kafkaKey?.customValue?.trim()) {
+          <p class="text-xs text-red-400">
+            A custom key value is required when the Kafka key mode is set to Custom.
+          </p>
+        }
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,282 @@
+<div class="h-screen overflow-hidden bg-brand-surface text-brand-text selection:bg-brand-primary/30 flex flex-col">
+  <!-- Nav -->
+  <nav class="sticky top-0 z-50 px-4 md:px-6 py-2 border-b border-brand-border bg-brand-surface/80 backdrop-blur-xl">
+    <div class="w-full flex justify-between items-center relative">
+      <div class="flex items-center gap-2 md:gap-3 shrink-0">
+        <app-machine-gun-logo class="w-8 h-8 md:w-10 md:h-10"></app-machine-gun-logo>
+        <h1
+          class="text-base md:text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-brand-text to-brand-text-muted truncate hidden sm:block">
+          Machine Gun
+        </h1>
+      </div>
+
+      <!-- Central Status Hub -->
+      <div class="absolute left-1/2 -translate-x-1/2 hidden xl:block z-10">
+        <app-connection-status></app-connection-status>
+      </div>
+
+      <div class="flex items-center gap-2 md:gap-4 shrink-0">
+        <button (click)="refreshSchemas()"
+          class="p-2.5 hover:bg-brand-overlay rounded-xl transition-colors text-brand-text-muted hover:text-brand-text flex items-center justify-center border border-transparent hover:border-brand-border">
+          <app-icon name="refresh" [size]="20"></app-icon>
+        </button>
+        <app-theme-switcher></app-theme-switcher>
+        <div class="hidden lg:block w-px h-4 bg-brand-border mx-2"></div>
+        <span
+          class="hidden lg:block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-text-muted opacity-40 whitespace-nowrap">
+          &copy; 2026 HarryUnchained
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 w-full flex flex-row overflow-hidden relative">
+    <!-- Telemetry Bookmark (Left Edge) - Only in Schemas view -->
+    @if (viewMode() === 'schemas') {
+    <div class="fixed left-0 top-1/2 -translate-y-1/2 z-60 flex flex-col items-center pointer-events-none gap-2">
+      <!-- Analytics Bookmark -->
+
+
+      <!-- Live Hub Bookmark -->
+      <button (click)="showLiveHub.update(v => !v)"
+        class="pointer-events-auto flex items-center justify-center w-14 px-4 py-4 bg-brand-surface border border-brand-border rounded-r-2xl shadow-2xl transition-all hover:translate-x-1 group/livehub-btn overflow-hidden">
+        <app-icon [name]="showLiveHub() ? 'close_fullscreen' : 'terminal'" [size]="20"
+          [class.text-brand-accent]="!showLiveHub()"
+          class="transition-transform group-hover/livehub-btn:scale-110"></app-icon>
+      </button>
+    </div>
+    }
+
+    <div class="flex-1 w-full flex flex-col overflow-hidden relative" [class.max-w-none]="viewMode() === 'schemas'"
+      [class.mx-auto]="viewMode() === 'schemas'" [class.px-4]="viewMode() === 'schemas'"
+      [class.md:px-6]="viewMode() === 'schemas'">
+      @if (viewMode() === 'schemas') {
+      <!-- Sticky Top Section -->
+      <div class="sticky top-0 z-40 bg-brand-surface pt-4 md:pt-6 pb-2 border-b border-transparent">
+        <header
+          class="mb-4 md:mb-5 flex flex-col xl:flex-row items-center justify-between gap-6 text-center xl:text-left leading-relaxed">
+          <div class="flex items-center gap-8 flex-1 min-w-0">
+            <div class="shrink-0">
+              <h2 class="text-lg md:text-xl font-extrabold tracking-tight mb-1">
+                Schema Generators
+              </h2>
+              <p class="text-brand-text-muted text-xs md:text-xs">
+                Load via <code class="text-brand-primary font-mono text-[10px]">src/library/schemas/</code> or create
+                dynamically.
+              </p>
+            </div>
+
+            <!-- Inline Telemetry (Always Visible) -->
+            <div class="flex-1 max-w-sm animate-in slide-in-from-left-4 duration-500 fade-in hidden lg:block">
+              <app-telemetry-chart [mini]="true"></app-telemetry-chart>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 md:gap-4 shrink-0">
+            <!-- Search Bar -->
+            <div class="relative group hidden sm:block">
+              <div
+                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-text-muted group-focus-within:text-brand-primary transition-colors">
+                <app-icon name="search" [size]="16"></app-icon>
+              </div>
+              <input type="text" [value]="searchQuery()" (input)="searchQuery.set(asInput($event).value)"
+                placeholder="Search schemas..."
+                class="bg-brand-overlay/50 border border-brand-border rounded-2xl py-2 pl-10 pr-10 text-xs font-bold text-brand-text placeholder:text-brand-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all w-48 md:w-60" />
+              @if (searchQuery()) {
+              <button (click)="searchQuery.set('')"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-brand-text-muted hover:text-brand-text transition-colors">
+                <app-icon name="close" [size]="14"></app-icon>
+              </button>
+              }
+            </div>
+
+            <button (click)="openBuilder()"
+              class="w-full md:w-auto flex items-center justify-center gap-3 px-5 py-2.5 bg-brand-primary hover:opacity-90 rounded-2xl font-bold transition-all shadow-xl shadow-brand-primary/20 group text-brand-primary-fg text-xs">
+              <app-icon name="add" [size]="18"
+                class="group-hover:rotate-90 transition-transform duration-300"></app-icon>
+              New Schema
+            </button>
+          </div>
+        </header>
+
+
+
+        <!-- Filter & Insights Bar (Sticky) -->
+        <div class="mb-4 flex flex-col xl:flex-row items-center justify-between gap-6">
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center gap-1.5 p-1.5 bg-brand-surface/40 backdrop-blur-md border border-brand-border rounded-[22px] shadow-sm overflow-x-auto max-w-full no-scrollbar">
+              <!-- Static Filter -->
+              <button (click)="toggleFilter('static')" [class.!bg-brand-overlay]="activeFilters().static"
+                [class.!text-brand-text]="activeFilters().static"
+                [class.!border-(--status-static)/30]="activeFilters().static"
+                class="px-4 py-2 rounded-[16px] transition-all flex items-center gap-2.5 hover:bg-brand-overlay text-brand-text-muted text-sm font-bold uppercase tracking-tighter whitespace-nowrap border border-transparent group">
+                <div class="w-1.5 h-1.5 rounded-full bg-(--status-static) group-hover:scale-125 transition-transform">
+                </div>
+                Static
+                <span class="px-2 py-0.5 rounded-lg bg-brand-border/50 text-sm font-mono opacity-60">{{
+                  schemaStats().static }}</span>
+              </button>
+
+              <!-- Static Edited Filter -->
+              <button (click)="toggleFilter('static-edited')"
+                [class.!bg-brand-overlay]="activeFilters()['static-edited']"
+                [class.!text-brand-text]="activeFilters()['static-edited']"
+                [class.!border-(--status-edited)/30]="activeFilters()['static-edited']"
+                class="px-4 py-2 rounded-[16px] transition-all flex items-center gap-2.5 hover:bg-brand-overlay text-brand-text-muted text-sm font-bold uppercase tracking-tighter whitespace-nowrap border border-transparent group">
+                <div class="w-1.5 h-1.5 rounded-full bg-(--status-edited) group-hover:scale-125 transition-transform">
+                </div>
+                Edited
+                <span class="px-2 py-0.5 rounded-lg bg-(--status-edited)/10 text-sm font-mono whitespace-nowrap">{{
+                  schemaStats()['static-edited'] }}</span>
+              </button>
+
+              <!-- Dynamic Filter -->
+              <button (click)="toggleFilter('dynamic')" [class.!bg-brand-overlay]="activeFilters().dynamic"
+                [class.!text-brand-text]="activeFilters().dynamic"
+                [class.!border-(--status-dynamic)/30]="activeFilters().dynamic"
+                class="px-4 py-2 rounded-[16px] transition-all flex items-center gap-2.5 hover:bg-brand-overlay text-brand-text-muted text-sm font-bold uppercase tracking-tighter whitespace-nowrap border border-transparent group">
+                <div class="w-1.5 h-1.5 rounded-full bg-(--status-dynamic) group-hover:scale-125 transition-transform">
+                </div>
+                Dynamic
+                <span class="px-2 py-0.5 rounded-lg bg-(--status-dynamic)/10 text-sm font-mono">{{ schemaStats().dynamic
+                  }}</span>
+              </button>
+            </div>
+
+            <!-- Active Only Filter -->
+            <button (click)="onlyActive.set(!onlyActive())" [class.bg-brand-primary/10]="onlyActive()"
+              [class.border-brand-primary/40]="onlyActive()" [class.text-brand-primary]="onlyActive()"
+              class="px-4 py-2 rounded-[16px] border border-brand-border transition-all flex items-center gap-2.5 hover:bg-brand-overlay text-brand-text-muted text-sm font-bold uppercase tracking-tighter whitespace-nowrap">
+              <div class="w-2 h-2 rounded-full transition-all" [class.animate-pulse]="onlyActive()"
+                [class.bg-brand-primary]="onlyActive()" [class.bg-brand-text-muted]="!onlyActive()"></div>
+              Active Only
+            </button>
+          </div>
+
+          <div class="flex items-center gap-3">
+            @if (socketService.activeSchemaIds().length > 0) {
+            <button (click)="stopAllTests()"
+              class="px-5 py-2.5 bg-brand-warning/10 hover:bg-brand-warning/20 border border-brand-warning/30 text-brand-warning rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 animate-in fade-in slide-in-from-right-4">
+              <app-icon name="stop" [size]="16"></app-icon>
+              Stop All ({{ socketService.activeSchemaIds().length }})
+            </button>
+            }
+
+            <div
+              class="hidden lg:flex items-center gap-6 px-4 py-2 bg-brand-surface/30 rounded-2xl border border-brand-border/50 text-xs uppercase font-bold tracking-tighter text-brand-text-muted">
+              <div class="flex items-center gap-3">
+                <span class="opacity-50 text-sm font-medium">Total</span>
+                <span class="text-brand-text font-mono text-xs">{{ schemaStats().total }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Grid Section -->
+        <div class="flex-1 overflow-y-auto brand-scrollbar pb-16 pt-2">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+            @for (schema of filteredSchemas(); track schema.id) {
+            <app-schema-card animate.enter="card-enter" [schema]="schema" (edit)="openBuilder(schema)"
+              (duplicate)="duplicateSchema(schema)"></app-schema-card>
+            } @empty {
+            <div
+              class="col-span-full py-12 md:py-16 flex flex-col items-center justify-center border-2 border-dashed border-brand-border rounded-3xl">
+              <div class="w-12 h-12 rounded-full bg-brand-overlay flex items-center justify-center mb-4 text-2xl">
+                <app-icon name="account_tree" [size]="24" class="text-brand-text-muted/30"></app-icon>
+              </div>
+              <p class="text-brand-text-muted font-medium text-sm">
+                No schemas discovered yet...
+              </p>
+            </div>
+            }
+          </div>
+        </div>
+        } @else {
+        <!-- Flow Orchestration Workspace -->
+        <div class="flex-1 flex overflow-hidden relative">
+          <!-- Mobile Backdrop -->
+          @if (showLibrary()) {
+          <div (click)="showLibrary.set(false)"
+            class="lg:hidden fixed inset-0 bg-brand-surface/40 backdrop-blur-sm z-51 animate-in fade-in duration-300">
+          </div>
+          }
+
+          <!-- Schema Library Sidebar / Drawer -->
+          <aside [class.w-72]="showLibrary()" [class.w-0]="!showLibrary()"
+            [class.opacity-0]="!showLibrary() && windowWidth() >= 1024"
+            [class.-translate-x-full]="!showLibrary() && windowWidth() < 1024"
+            class="lg:relative fixed inset-y-0 left-0 lg:inset-auto z-55 lg:z-20 border-r border-brand-border bg-brand-surface flex flex-col shrink-0 transition-all duration-500 ease-in-out overflow-hidden shadow-2xl lg:shadow-none">
+            <div
+              class="p-6 border-b border-brand-border bg-brand-overlay/10 whitespace-nowrap flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <h3 class="text-sm font-bold uppercase tracking-tighter text-brand-text/50">
+                    Schema Library
+                  </h3>
+                  <span
+                    class="text-sm font-medium font-mono text-brand-primary bg-brand-primary/10 px-1.5 py-0.5 rounded">{{
+                    schemas().length }}</span>
+                </div>
+                <p class="text-xs text-brand-text-muted">Drag to orchestrate</p>
+              </div>
+              <button (click)="showLibrary.set(false)" class="lg:hidden p-2 hover:bg-brand-overlay rounded-lg">
+                <app-icon name="close" [size]="18"></app-icon>
+              </button>
+            </div>
+            <!-- Schema Search in Library -->
+            <div class="px-4 pb-3 border-b border-brand-border bg-brand-surface">
+              <div class="relative group">
+                <app-icon name="search" [size]="14"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-text-muted group-focus-within:text-brand-primary transition-colors"></app-icon>
+                <input type="text" [value]="searchQuery()" (input)="searchQuery.set(asInput($event).value)"
+                  placeholder="Search schemas..."
+                  class="w-full bg-brand-overlay/50 border border-brand-border rounded-xl py-2 pl-9 pr-3 text-xs font-bold text-brand-text placeholder:text-brand-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary/10 transition-all" />
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 brand-scrollbar">
+              @for (schema of filteredSchemas(); track schema.id) {
+              <div draggable="true" (dragstart)="onSchemaDragStart($event, schema)"
+                class="group p-4 bg-brand-overlay/20 border border-brand-border rounded-2xl hover:border-brand-primary/50 hover:bg-brand-overlay/40 transition-all cursor-grab active:cursor-grabbing w-full">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center text-brand-text-muted group-hover:text-brand-primary transition-colors">
+                    <app-icon name="account_tree" [size]="20"></app-icon>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-brand-text truncate">
+                      {{ schema.name }}
+                    </div>
+                    <div class="text-sm font-medium text-brand-text-muted uppercase tracking-tighter">
+                      {{ schema.fields.length }} Fields
+                    </div>
+                  </div>
+                </div>
+              </div>
+              }
+            </div>
+          </aside>
+
+          <!-- Main Canvas Area -->
+          <div class="flex-1 relative bg-brand-overlay/5 overflow-hidden">
+            <app-flow-canvas class="absolute inset-0"></app-flow-canvas>
+          </div>
+        </div>
+        }
+      </div>
+  </main>
+
+  <!-- Overlay Schema Builder -->
+  @if (showBuilder()) {
+  <app-schema-builder [editSchema]="selectedSchema()" (close)="closeBuilder()"></app-schema-builder>
+  }
+
+
+  <!-- Live Hub Console Overlay -->
+  @if (showLiveHub()) {
+  <app-live-hub (close)="showLiveHub.set(false)"></app-live-hub>
+  }
+</div>

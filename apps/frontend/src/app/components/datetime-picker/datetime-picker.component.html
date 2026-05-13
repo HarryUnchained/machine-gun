@@ -1,0 +1,191 @@
+<div class="relative w-full">
+  <div
+    class="w-full flex items-center gap-2 px-2 py-2 rounded-xl border border-brand-border bg-brand-surface/50 transition-all hover:bg-brand-overlay/70"
+    [class.ring-2]="isOpen()"
+    [class.ring-brand-primary/20]="isOpen()"
+    [class.border-brand-primary/50]="isOpen()"
+  >
+    <button
+      type="button"
+      (click)="togglePicker()"
+      class="flex-1 min-w-0 text-left px-1 py-0.5 focus:outline-none"
+      [attr.aria-expanded]="isOpen()"
+      aria-haspopup="dialog"
+    >
+      @if (displayValue()) {
+        <div class="text-sm font-mono text-brand-text truncate">{{ displayValue() }}</div>
+      } @else {
+        <div class="text-sm text-brand-text-muted truncate">{{ placeholder() }}</div>
+      }
+    </button>
+
+    @if (value() !== undefined) {
+      <button
+        type="button"
+        (click)="clearValue($event)"
+        class="shrink-0 p-1.5 rounded-lg text-brand-text-muted hover:text-brand-text hover:bg-brand-overlay transition-colors"
+        aria-label="Clear date and time"
+      >
+        <app-icon name="close" [size]="16"></app-icon>
+      </button>
+    }
+
+    @if (showCalendarButton()) {
+      <button
+        type="button"
+        (click)="togglePicker()"
+        class="shrink-0 p-1.5 rounded-lg text-brand-text-muted hover:text-brand-primary hover:bg-brand-overlay transition-colors"
+        aria-label="Open date and time picker"
+      >
+        <app-icon name="timestamp" [size]="18"></app-icon>
+      </button>
+    }
+  </div>
+
+  @if (isOpen()) {
+    <div
+      class="absolute mt-3 z-[80] rounded-2xl border border-brand-border bg-brand-surface shadow-2xl overflow-visible backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200"
+      [class.left-0]="align() === 'left'"
+      [class.right-0]="align() === 'right'"
+      [style.width]="showTime() ? 'min(34rem, calc(100vw - 2rem))' : 'min(21rem, calc(100vw - 2rem))'"
+      role="dialog"
+      aria-label="Date and time picker"
+    >
+      <div class="p-3 border-b border-brand-border flex items-center justify-between gap-2">
+        <button
+          type="button"
+          (click)="goToPreviousMonth()"
+          [disabled]="!canGoPreviousMonth()"
+          class="p-2 rounded-xl text-brand-text-muted hover:text-brand-text hover:bg-brand-overlay transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Previous month"
+        >
+          <app-icon name="chevron_left" [size]="18"></app-icon>
+        </button>
+
+        <div class="text-center">
+          <div class="text-xs font-bold uppercase tracking-[0.2em] text-brand-primary">Calendar</div>
+          <div class="text-base font-semibold text-brand-text">{{ monthTitle() }}</div>
+        </div>
+
+        <button
+          type="button"
+          (click)="goToNextMonth()"
+          [disabled]="!canGoNextMonth()"
+          class="p-2 rounded-xl text-brand-text-muted hover:text-brand-text hover:bg-brand-overlay transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Next month"
+        >
+          <app-icon name="chevron_right" [size]="18"></app-icon>
+        </button>
+      </div>
+
+      <div
+        class="grid gap-0"
+        [class.min-[560px]:grid-cols-[minmax(0,1fr)_13rem]]="showTime()"
+        [class.min-[560px]:grid-cols-1]="!showTime()"
+      >
+        <div class="p-3 min-w-0">
+          <div class="grid grid-cols-7 gap-2 mb-2.5">
+            @for (weekday of weekdayLabels(); track weekday) {
+              <div class="text-center text-[10px] font-bold uppercase tracking-[0.14em] text-brand-text-muted">
+                {{ weekday }}
+              </div>
+            }
+          </div>
+
+          <div class="grid grid-cols-7 gap-2">
+            @for (day of calendarDays(); track trackDay($index, day)) {
+              @if (day.date) {
+                <button
+                  type="button"
+                  (click)="selectDay(day)"
+                  [disabled]="day.isDisabled"
+                  class="aspect-square min-h-9 rounded-xl border text-xs font-semibold transition-all"
+                  [class.border-brand-primary]="isSelectedDay(day)"
+                  [class.bg-brand-primary]="isSelectedDay(day)"
+                  [class.text-brand-primary-fg]="isSelectedDay(day)"
+                  [class.shadow-lg]="isSelectedDay(day)"
+                  [class.border-brand-border]="!isSelectedDay(day)"
+                  [class.text-brand-text]="!isSelectedDay(day)"
+                  [class.bg-brand-overlay/70]="!isSelectedDay(day)"
+                  [class.hover:bg-brand-primary/10]="!day.isDisabled && !isSelectedDay(day)"
+                  [class.opacity-35]="day.isDisabled"
+                  [class.cursor-not-allowed]="day.isDisabled"
+                  [class.ring-1]="isToday(day) && !isSelectedDay(day)"
+                  [class.ring-brand-primary/40]="isToday(day) && !isSelectedDay(day)"
+                  [attr.aria-pressed]="isSelectedDay(day)"
+                >
+                  {{ day.date.getDate() }}
+                </button>
+              } @else {
+                <div class="aspect-square min-h-9 rounded-xl border border-transparent bg-transparent"></div>
+              }
+            }
+          </div>
+        </div>
+
+        @if (showTime()) {
+          <div class="px-3 pb-3 min-[560px]:pl-0 min-[560px]:py-3">
+            <div class="rounded-2xl border border-brand-border bg-brand-overlay/70 p-3 flex flex-col gap-3 h-full">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-sm font-bold uppercase tracking-[0.18em] text-brand-primary">Time</div>
+                  <div class="text-xs text-brand-text-muted">Choose the exact hour and minute</div>
+                </div>
+                <app-icon name="timer" [size]="18" class="text-brand-text-muted"></app-icon>
+              </div>
+
+              <div class="grid grid-cols-1 gap-2.5">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-bold uppercase tracking-[0.18em] text-brand-text-muted">Hour</label>
+                  <app-select
+                    [value]="selectedHour()"
+                    [options]="hourOptions()"
+                    panelDirection="up"
+                    (change)="updateHour($event)"
+                  ></app-select>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-bold uppercase tracking-[0.18em] text-brand-text-muted">Minute</label>
+                  <app-select
+                    [value]="selectedMinute()"
+                    [options]="minuteOptions()"
+                    panelDirection="up"
+                    (change)="updateMinute($event)"
+                  ></app-select>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="px-3 pb-3 pt-0.5 flex items-center justify-between gap-2.5">
+        <button
+          type="button"
+          (click)="clearValue()"
+          class="px-3 py-2 rounded-xl border border-brand-border text-sm font-bold uppercase tracking-tight text-brand-text-muted hover:text-brand-text hover:bg-brand-overlay transition-colors"
+        >
+          Clear
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="closePicker(false)"
+            class="px-3 py-2 rounded-xl border border-brand-border text-sm font-bold uppercase tracking-tight text-brand-text hover:bg-brand-overlay transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            (click)="closePicker(true)"
+            class="px-3 py-2 rounded-xl bg-brand-primary text-brand-primary-fg text-sm font-bold uppercase tracking-tight hover:opacity-90 transition-opacity"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

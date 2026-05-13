@@ -1,0 +1,399 @@
+<div
+  class="p-6 md:p-7 rounded-[28px] bg-brand-overlay border border-brand-border hover:border-brand-primary/20 transition-all group flex flex-col h-full backdrop-blur-md shadow-2xl"
+>
+  <!-- Header -->
+  <div class="flex justify-between items-start mb-3 md:mb-4">
+    <div class="flex-1 min-w-0">
+      <div class="flex flex-wrap items-center gap-2 mb-1">
+        <h3 class="text-lg md:text-2xl font-bold text-brand-text tracking-tight truncate">
+          {{ schema().name }}
+        </h3>
+        <span
+          [class]="
+            schema().source === 'static'
+              ? isModified()
+                ? 'bg-(--status-edited)/10 text-(--status-edited)'
+                : 'bg-(--status-static)/10 text-(--status-static)'
+              : 'bg-(--status-dynamic)/10 text-(--status-dynamic)'
+          "
+          class="px-2 py-0.5 rounded-md text-sm font-medium md:text-xs uppercase font-bold border border-current/15 shrink-0"
+        >
+          {{ schema().source === 'static' && isModified() ? 'Edited' : schema().source }}
+        </span>
+        @if (schema().destination.transport === TransportType.RABBITMQ) {
+          <div
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-all border border-current/20 shrink-0"
+            [class.opacity-40]="!rabbitAvailable()"
+            [class.bg-orange-500/10]="rabbitAvailable() && connected() && rabbitConnected()"
+            [class.text-orange-400]="rabbitAvailable() && connected() && rabbitConnected()"
+            [class.bg-(--status-connecting)/10]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+            [class.text-(--status-connecting)]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+            [class.bg-red-500/10]="rabbitAvailable() && (!connected() || (!rabbitConnected() && !rabbitConnecting()))"
+            [class.text-red-500/60]="rabbitAvailable() && (!connected() || (!rabbitConnected() && !rabbitConnecting()))"
+            [class.animate-pulse]="rabbitAvailable() && connected() && !rabbitConnected() && rabbitConnecting()"
+            [class.grayscale]="!rabbitAvailable()"
+            [title]="!rabbitAvailable() ? 'RabbitMQ Not Configured' : (rabbitConnected() ? 'RabbitMQ Connected' : (rabbitConnecting() ? 'RabbitMQ Reconnecting...' : 'RabbitMQ Disconnected'))"
+          >
+            <app-icon
+              name="rabbitmq"
+              [size]="12"
+              [class.text-brand-text/20]="!rabbitAvailable()"
+            ></app-icon>
+            <span class="text-sm font-medium md:text-xs uppercase font-bold tracking-tighter">AMQP</span>
+          </div>
+        } @else if (schema().destination.transport === TransportType.KAFKA) {
+          <div
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-all border border-current/20 shrink-0"
+            [class.opacity-40]="!kafkaAvailable()"
+            [class.bg-brand-primary/10]="kafkaAvailable() && connected() && kafkaConnected()"
+            [class.text-brand-primary]="kafkaAvailable() && connected() && kafkaConnected()"
+            [class.bg-(--status-connecting)/10]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+            [class.text-(--status-connecting)]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+            [class.bg-red-500/10]="kafkaAvailable() && (!connected() || (!kafkaConnected() && !kafkaConnecting()))"
+            [class.text-red-400/60]="kafkaAvailable() && (!connected() || (!kafkaConnected() && !kafkaConnecting()))"
+            [class.animate-pulse]="kafkaAvailable() && connected() && !kafkaConnected() && kafkaConnecting()"
+            [class.grayscale]="!kafkaAvailable()"
+            [title]="!kafkaAvailable() ? 'Kafka Not Configured' : (kafkaConnected() ? 'Kafka Connected' : (kafkaConnecting() ? 'Kafka Reconnecting...' : 'Kafka Disconnected'))"
+          >
+            <app-icon
+              name="kafka"
+              [size]="12"
+              [class.text-brand-text/20]="!kafkaAvailable()"
+            ></app-icon>
+            <span class="text-sm font-medium md:text-xs uppercase font-bold tracking-tighter"
+              >Events</span
+            >
+          </div>
+        }
+
+        @if (schema().destination.isRpc) {
+          <div
+            class="flex items-center gap-1.2 px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0"
+            title="RPC Request/Response Flow Enabled"
+          >
+            <app-icon name="bolt" [size]="10"></app-icon>
+            <span class="text-xs font-bold md:text-sm font-medium uppercase font-bold tracking-tighter">RPC</span>
+          </div>
+        }
+
+        @if (schema().destination.routingKey) {
+          <div
+            class="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-brand-overlay border border-brand-border text-brand-text-muted/70 shrink-0 max-w-[100px]"
+            [title]="'Routing Key: ' + schema().destination.routingKey"
+          >
+            <span class="text-xs font-bold md:text-sm font-bold uppercase font-bold opacity-30">RK:</span>
+            <span class="text-xs font-bold md:text-xs font-bold tracking-tight truncate">{{
+              schema().destination.routingKey
+            }}</span>
+          </div>
+        }
+      </div>
+      <p class="text-sm text-brand-text-muted line-clamp-2 h-11 md:h-12 leading-relaxed">
+        {{ schema().description || 'No description provided' }}
+      </p>
+
+      @if (schemaStats(); as stats) {
+        <div class="flex items-center justify-between mt-3">
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-brand-primary"></div>
+              <span class="text-xs font-bold text-brand-text-muted uppercase tracking-wider">
+                {{ schema().destination.isRpc ? 'Request' : 'Published' }}: 
+                <span class="text-brand-text">{{ stats.sent | number }}</span>
+              </span>
+            </div>
+            @if (schema().destination.isRpc) {
+              <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                <span class="text-xs font-bold text-brand-text-muted uppercase tracking-wider">
+                  Response: 
+                  <span class="text-indigo-400">{{ stats.received | number }}</span>
+                </span>
+              </div>
+            }
+          </div>
+          @if (stats.sent > 0 || stats.received > 0) {
+            <button
+              (click)="resetStats()"
+              class="ml-auto p-1.5 hover:bg-brand-surface border border-transparent hover:border-brand-border rounded-lg text-brand-text-muted/60 hover:text-brand-text transition-all"
+              title="Reset Statistics"
+            >
+              <app-icon name="restart" [size]="14"></app-icon>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+      <button
+        (click)="duplicate.emit(schema())"
+        class="p-2.5 hover:bg-brand-overlay rounded-xl text-brand-text-muted hover:text-brand-accent transition-colors flex items-center justify-center border border-transparent hover:border-brand-border"
+        title="Duplicate Schema"
+      >
+        <app-icon name="copy" [size]="18"></app-icon>
+      </button>
+      <button
+        (click)="edit.emit(schema())"
+        class="p-2.5 hover:bg-brand-overlay rounded-xl text-brand-text-muted hover:text-brand-text transition-colors flex items-center justify-center border border-transparent hover:border-brand-border"
+      >
+        <app-icon name="edit" [size]="18"></app-icon>
+      </button>
+
+      @if (schema().source === 'static' && isModified()) {
+        <button
+          (click)="resetToDefault()"
+          class="p-2.5 hover:bg-brand-warning/10 rounded-xl text-brand-text-muted hover:text-brand-warning transition-colors flex items-center justify-center border border-transparent hover:border-brand-warning/20"
+          title="Reset to System Default"
+        >
+          <app-icon name="restart" [size]="18"></app-icon>
+        </button>
+      }
+
+      @if (schema().source !== 'static') {
+        <button
+          (click)="delete()"
+          class="p-2.5 hover:bg-red-500/10 rounded-xl text-brand-text-muted hover:text-red-400 transition-colors flex items-center justify-center border border-transparent hover:border-red-400/20"
+          title="Delete Schema"
+        >
+          <app-icon name="delete" [size]="18"></app-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Fields Mini-Viewer -->
+  <div class="mb-4 md:mb-5 flex-1">
+    <div class="flex flex-wrap gap-2 md:gap-3 transition-all duration-300">
+      @for (field of (isExpanded() ? schema().fields : schema().fields.slice(0, 6)); track field.name) {
+        <div
+          class="flex items-center gap-2.5 px-4 py-2 md:px-4 md:py-2 rounded-2xl bg-brand-surface border border-brand-border text-xs md:text-xs text-brand-text-muted transition-colors hover:border-brand-primary/30"
+        >
+          @switch (field.type) {
+            @case (GeneratorFieldType.UUID) {
+              <app-icon
+                name="uuid"
+                [size]="14"
+                variant="solid"
+                class="text-brand-accent/60"
+              ></app-icon>
+            }
+            @case (GeneratorFieldType.STRING) {
+              <app-icon
+                name="string"
+                [size]="14"
+                variant="solid"
+                class="text-brand-primary/60"
+              ></app-icon>
+            }
+            @case (GeneratorFieldType.INT) {
+              <app-icon
+                name="number"
+                [size]="14"
+                variant="solid"
+                class="text-green-400/60"
+              ></app-icon>
+            }
+            @case (GeneratorFieldType.ISO_TIMESTAMP) {
+              <app-icon
+                name="timestamp"
+                [size]="14"
+                variant="solid"
+                class="text-orange-400/60"
+              ></app-icon>
+            }
+          }
+          <span class="font-semibold tracking-tighter">{{ field.name }}</span>
+        </div>
+      }
+      @if (schema().fields.length > 6) {
+        <button
+          (click)="isExpanded.set(!isExpanded())"
+          class="px-3 py-2 md:px-3 md:py-2 rounded-2xl bg-brand-overlay hover:bg-brand-border text-[10px] text-brand-text font-black flex items-center border border-brand-border transition-all active:scale-95 group/expand whitespace-nowrap"
+        >
+          @if (!isExpanded()) {
+            +{{ schema().fields.length - 6 }}
+          } @else {
+            <app-icon name="close" [size]="10" class="mr-1.5 opacity-60"></app-icon>
+            COLLAPSE
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="space-y-4 pt-4 md:pt-5 border-t border-brand-border mt-auto">
+    <!-- Load Controls -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-4">
+      <!-- Continuous Load -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <label
+            class="text-xs md:text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+            >Target Load</label
+          >
+          <div
+            class="flex flex-col items-end gap-1 bg-brand-surface/50 px-2 py-1.5 rounded-lg border border-brand-border/40"
+          >
+            <input
+              type="text"
+              inputmode="numeric"
+              [value]="frequency() ?? ''"
+              (input)="onFrequencyChange($any($event.target))"
+              (blur)="onFrequencyBlur($any($event.target))"
+              class="w-12 md:w-14 bg-transparent text-sm font-mono font-bold text-brand-primary focus:outline-none text-right"
+            />
+            <span class="text-[10px] md:text-xs font-bold text-brand-text-muted/90 leading-none whitespace-nowrap">MSG/S</span>
+          </div>
+        </div>
+        <div class="px-1">
+          <input
+            type="range"
+            min="1"
+            max="50000"
+            step="1"
+            [value]="frequency() ?? 1"
+            (input)="onFrequencyChange($any($event.target))"
+            (blur)="onFrequencyBlur($any($event.target))"
+            class="w-full appearance-none cursor-pointer accent-brand-primary"
+          />
+          <div class="flex items-center gap-1.5 mt-2 ml-1">
+            <app-icon name="timer" [size]="10" class="text-brand-primary/50"></app-icon>
+            <span class="text-xs font-bold text-brand-text-muted/70 tracking-tight">
+              1 message every <span class="text-brand-primary">{{ loadInterval() }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- One-time Burst -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <label
+            class="text-xs md:text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+            >Burst Volume</label
+          >
+          <div
+            class="flex flex-col items-end gap-1 bg-brand-surface/50 px-2 py-1.5 rounded-lg border border-brand-border/40"
+          >
+            <input
+              type="text"
+              inputmode="numeric"
+              [value]="burstCount() ?? ''"
+              (input)="onBurstChange($any($event.target))"
+              (blur)="onBurstBlur($any($event.target))"
+              class="w-14 md:w-16 bg-transparent text-sm font-mono font-bold text-brand-accent focus:outline-none text-right"
+            />
+            <span class="text-[10px] md:text-xs font-bold text-brand-text-muted/90 leading-none whitespace-nowrap">TOTAL</span>
+          </div>
+        </div>
+        <div class="px-1">
+          <input
+            type="range"
+            min="1"
+            max="1000000"
+            step="1"
+            [value]="burstCount() ?? 1"
+            (input)="onBurstChange($any($event.target))"
+            (blur)="onBurstBlur($any($event.target))"
+            class="w-full appearance-none cursor-pointer accent-brand-accent"
+          />
+          <div class="flex items-center gap-1.5 mt-2 ml-1">
+            <app-icon name="bolt" [size]="10" class="text-brand-accent/50" variant="solid"></app-icon>
+            <span class="text-xs font-bold text-brand-text-muted/70 tracking-tight">
+              One-time blast of <span class="text-brand-accent">{{ burstSummary() }}</span>
+            </span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Grid -->
+    <div class="grid grid-cols-2 gap-4">
+      <button
+        (click)="toggleRunState()"
+        [disabled]="isPending()"
+        [class]="primaryActionClass()"
+        class="flex items-center justify-center gap-3 py-3 rounded-[18px] text-[12px] md:text-[13px] font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+      >
+        <app-icon [name]="primaryActionIcon()" [size]="16" variant="solid"
+          [class.animate-spin]="showPendingVisual()"></app-icon>
+        {{ primaryActionLabel() }}
+      </button>
+
+      <button
+        (click)="burst()"
+        [disabled]="isBursting()"
+        class="flex items-center justify-center gap-3 py-3 rounded-[18px] bg-brand-overlay hover:bg-brand-border text-brand-text text-[12px] md:text-[13px] font-bold transition-all border border-brand-border active:scale-95 shadow-sm disabled:opacity-70 disabled:cursor-wait"
+      >
+        <app-icon [name]="isBursting() ? 'refresh' : 'bolt'" [size]="16" 
+          [class.text-brand-accent]="!isBursting()"
+          [class.animate-spin]="isBursting()"></app-icon>
+        {{ isBursting() ? 'BURSTING...' : 'BURST' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Confirmation Modal -->
+@if (showConfirmModal()) {
+<div
+  class="fixed inset-0 z-[2000] flex items-center justify-center bg-brand-surface/60 backdrop-blur-md animate-in fade-in duration-300">
+  <div (click)="$event.stopPropagation()"
+    class="w-full max-w-md bg-brand-surface border border-brand-border rounded-[2.5rem] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-300 mx-4">
+    <div class="p-8 pb-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center border"
+          [class.bg-brand-warning/10]="confirmType() === 'reset'"
+          [class.border-brand-warning/20]="confirmType() === 'reset'"
+          [class.bg-red-500/10]="confirmType() === 'delete'"
+          [class.border-red-500/20]="confirmType() === 'delete'">
+          <app-icon [name]="confirmType() === 'reset' ? 'restart' : 'delete'" [size]="24"
+            [class.text-brand-warning]="confirmType() === 'reset'"
+            [class.text-red-500]="confirmType() === 'delete'"></app-icon>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-brand-text leading-tight">
+            {{ confirmType() === 'reset' ? 'Reset to Default' : 'Delete Schema' }}
+          </h3>
+          <p class="text-sm text-brand-text-muted font-medium">
+            {{ confirmType() === 'reset' ? 'Discarding all your changes' : 'Removing this schema permanently' }}
+          </p>
+        </div>
+      </div>
+      <button (click)="showConfirmModal.set(false)"
+        class="p-3 hover:bg-brand-overlay rounded-2xl transition-all text-brand-text-muted hover:text-brand-text">
+        <app-icon name="close" [size]="20"></app-icon>
+      </button>
+    </div>
+
+    <div class="p-8 pt-4 space-y-6">
+      <div class="p-4 bg-brand-overlay/40 rounded-2xl border border-brand-border/50">
+        <p class="text-sm font-medium text-brand-text-muted leading-relaxed">
+          @if (confirmType() === 'reset') {
+            This will discard your custom modifications to <strong>{{ schema().name }}</strong> and revert it to the server's original blueprint. This action cannot be undone.
+          } @else {
+            Are you sure you want to delete <strong>{{ schema().name }}</strong>? Any orchestration nodes using this schema may fail to execute.
+          }
+        </p>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button (click)="showConfirmModal.set(false)"
+          class="flex-1 px-6 py-4 border border-brand-border rounded-2xl text-sm font-bold uppercase tracking-widest text-brand-text-muted hover:bg-brand-overlay transition-all">
+          Cancel
+        </button>
+        <button (click)="confirmAction()"
+          class="flex-[2] px-6 py-4 rounded-2xl text-sm font-bold uppercase tracking-widest text-white transition-all shadow-xl"
+          [class.bg-brand-warning]="confirmType() === 'reset'"
+          [class.shadow-brand-warning/20]="confirmType() === 'reset'"
+          [class.bg-red-500]="confirmType() === 'delete'"
+          [class.shadow-red-500/20]="confirmType() === 'delete'">
+          {{ confirmType() === 'reset' ? 'Confirm Reset' : 'Delete Permanent' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

@@ -1,0 +1,111 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(circle, var(--brand-border) 1px, transparent 1px);
+  background-size: 30px 30px;
+  overflow: hidden;
+  position: relative;
+}
+
+.node-container {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  z-index: 10;
+  transition: box-shadow 0.2s;
+}
+
+.node-container:hover {
+  box-shadow: 0 0 20px var(--brand-primary-light);
+}
+
+.node-running {
+  box-shadow: 0 0 20px var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
+  animation: pulse-glow 2s infinite;
+}
+
+.node-completed {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2) !important;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 10px var(--brand-primary);
+  }
+
+  50% {
+    box-shadow: 0 0 25px var(--brand-primary);
+  }
+
+  100% {
+    box-shadow: 0 0 10px var(--brand-primary);
+  }
+}
+
+.node-container:active {
+  cursor: grabbing;
+}
+
+.node-details {
+  max-height: 400px;
+  overflow: visible;
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+.node-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.toolbar {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  /* Move to right to avoid sidebar toggle */
+  z-index: 200;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+
+@media (max-width: 1024px) {
+  .toolbar {
+    left: 1.5rem;
+    /* Back to left on mobile where sidebar is a drawer */
+    right: 1.5rem;
+  }
+}
+
+.toolbar>* {
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    justify-content: center;
+  }
+}
+
+.hub-content {
+  padding-top: 4rem;
+  /* Reduced from 6rem to shift content up */
+  padding-bottom: 6rem;
+  /* Account for global footer */
+}
+
+@media (max-width: 768px) {
+  .hub-content {
+    padding-top: 8rem;
+    padding-bottom: 8rem;
+  }
+}

@@ -1,0 +1,871 @@
+<div
+  class="grid grid-cols-12 gap-3 items-end p-4 bg-brand-overlay border border-brand-border rounded-2xl animate-in slide-in-from-left duration-300"
+>
+  <!-- Field Key -->
+  <div class="col-span-12 md:col-span-4">
+    <label
+      class="block text-sm uppercase tracking-tighter font-bold text-brand-text-muted mb-1.5 ml-1"
+      >Field Key</label
+    >
+    <input
+      #keyInput
+      [value]="field().name"
+      (input)="fieldUpdate.emit({ name: keyInput.value })"
+      placeholder="e.g. user_id"
+      class="w-full bg-brand-surface border border-brand-border rounded-xl px-4 py-3 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/40 transition-all hover:bg-brand-overlay/50"
+    />
+  </div>
+
+  <!-- Generator Type Selector -->
+  <div class="col-span-12 md:col-span-5">
+    <label
+      class="block text-sm uppercase tracking-tighter font-bold text-brand-text-muted mb-1.5 ml-1"
+      >Generator Type</label
+    >
+    <app-select
+      [value]="field().type"
+      [options]="rowFieldTypeOptions()"
+      (change)="fieldUpdate.emit({ type: $event })"
+    ></app-select>
+  </div>
+
+  <!-- Remove Button -->
+  <div class="col-span-12 md:col-span-3">
+    <button
+      (click)="remove.emit()"
+      class="w-full py-3 flex items-center justify-center gap-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl hover:bg-red-500/20 transition-all group"
+    >
+      <app-icon
+        name="delete"
+        [size]="16"
+        class="group-hover:scale-110 transition-transform"
+      ></app-icon>
+      <span class="text-sm font-bold uppercase tracking-tight">Remove</span>
+    </button>
+  </div>
+
+  <!-- Number Options -->
+  @if (field().type === GeneratorFieldType.INT || field().type === GeneratorFieldType.FLOAT) {
+    <div
+      class="col-span-12 mt-2 pt-3 border-t border-brand-border/30 flex flex-wrap items-center gap-6 animate-in slide-in-from-top-2 duration-300"
+    >
+      <div
+        class="flex items-center bg-brand-surface/30 p-1 rounded-lg border border-brand-border/30"
+      >
+        <button
+          (click)="setNumberType(GeneratorFieldType.INT)"
+          [class.bg-brand-primary]="field().type === GeneratorFieldType.INT"
+          [class.text-white]="field().type === GeneratorFieldType.INT"
+          class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+        >
+          Integer
+        </button>
+        <button
+          (click)="setNumberType(GeneratorFieldType.FLOAT)"
+          [class.bg-brand-primary]="field().type === GeneratorFieldType.FLOAT"
+          [class.text-white]="field().type === GeneratorFieldType.FLOAT"
+          class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+        >
+          Float
+        </button>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted">Min</span>
+        <app-stepper
+          [value]="field().options?.min ?? null"
+          (valueChange)="fieldOptionsUpdate.emit({ min: $event ?? undefined })"
+          [step]="field().type === GeneratorFieldType.FLOAT ? 0.1 : 1"
+          placeholder="Min"
+        ></app-stepper>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted">Max</span>
+        <app-stepper
+          [value]="field().options?.max ?? null"
+          (valueChange)="fieldOptionsUpdate.emit({ max: $event ?? undefined })"
+          [step]="field().type === GeneratorFieldType.FLOAT ? 0.1 : 1"
+          placeholder="Max"
+        ></app-stepper>
+      </div>
+    </div>
+  }
+
+  <!-- Datetime Options -->
+  @if (
+    field().type === GeneratorFieldType.ISO_TIMESTAMP ||
+    field().type === GeneratorFieldType.UNIX_DATETIME ||
+    field().type === GeneratorFieldType.DATETIME
+  ) {
+    <div
+      class="col-span-12 mt-2 pt-3 border-t border-brand-border/30 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-300"
+    >
+      <div class="flex flex-wrap items-center gap-3">
+        <div
+          class="flex flex-wrap items-center bg-brand-surface/30 p-1 rounded-lg border border-brand-border/30"
+        >
+          <button
+            (click)="setDateFormat(GeneratorFieldType.ISO_TIMESTAMP)"
+            [class.bg-brand-primary]="field().type === GeneratorFieldType.ISO_TIMESTAMP"
+            [class.text-white]="field().type === GeneratorFieldType.ISO_TIMESTAMP"
+            class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+          >
+            ISO
+          </button>
+          <button
+            (click)="setDateFormat(GeneratorFieldType.UNIX_DATETIME)"
+            [class.bg-brand-primary]="field().type === GeneratorFieldType.UNIX_DATETIME"
+            [class.text-white]="field().type === GeneratorFieldType.UNIX_DATETIME"
+            class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+          >
+            Unix
+          </button>
+          <button
+            (click)="setDateFormat(GeneratorFieldType.DATETIME)"
+            [class.bg-brand-primary]="field().type === GeneratorFieldType.DATETIME"
+            [class.text-white]="field().type === GeneratorFieldType.DATETIME"
+            class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+          >
+            Native
+          </button>
+        </div>
+        <div
+          class="flex flex-wrap items-center bg-brand-surface/30 p-1 rounded-lg border border-brand-border/30"
+        >
+          <button
+            (click)="setDatetimeTimeEnabled(true)"
+            [class.bg-brand-primary]="datetimeIncludesTime()"
+            [class.text-white]="datetimeIncludesTime()"
+            class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+          >
+            Time On
+          </button>
+          <button
+            (click)="setDatetimeTimeEnabled(false)"
+            [class.bg-brand-primary]="!datetimeIncludesTime()"
+            [class.text-white]="!datetimeIncludesTime()"
+            class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+          >
+            Date Only
+          </button>
+        </div>
+        <button
+          (click)="showDatetimeInfo.update((v) => !v)"
+          class="p-1.5 text-brand-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-all flex items-center gap-2 group"
+        >
+          <app-icon
+            name="info"
+            [size]="16"
+            class="group-hover:scale-110 transition-transform"
+          ></app-icon>
+          <span class="text-sm font-bold uppercase tracking-tighter">Output Guide</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+        <div class="flex flex-col gap-2">
+          <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+            >Start</span
+          >
+          <app-datetime-picker
+            [value]="field().options?.min"
+            (valueChange)="fieldOptionsUpdate.emit({ min: $event })"
+            [max]="field().options?.max"
+            [showTime]="datetimeIncludesTime()"
+            boundary="start"
+            placeholder="{{ datetimeIncludesTime() ? 'Pick the earliest datetime' : 'Pick the earliest date' }}"
+          ></app-datetime-picker>
+        </div>
+        <div class="flex flex-col gap-2">
+          <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+            >End</span
+          >
+          <app-datetime-picker
+            [value]="field().options?.max"
+            (valueChange)="fieldOptionsUpdate.emit({ max: $event })"
+            [min]="field().options?.min"
+            [showTime]="datetimeIncludesTime()"
+            boundary="end"
+            align="right"
+            placeholder="{{ datetimeIncludesTime() ? 'Pick the latest datetime' : 'Pick the latest date' }}"
+          ></app-datetime-picker>
+        </div>
+      </div>
+
+      @if (showDatetimeInfo()) {
+        <div
+          class="p-4 bg-brand-surface border border-brand-border/40 rounded-2xl animate-in fade-in slide-in-from-top-2"
+        >
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold uppercase tracking-[0.2em] text-brand-primary"
+                >Datetime Output Guide</span
+              >
+              <button
+                (click)="showDatetimeInfo.set(false)"
+                class="text-brand-text-muted hover:text-brand-text transition-colors"
+              >
+                <app-icon name="close" [size]="14"></app-icon>
+              </button>
+            </div>
+            <p class="text-xs text-brand-text-muted leading-relaxed max-w-2xl">
+              All three modes use the same date range. The difference is how the generated value is
+              returned in your payload, and whether you want full timestamps or date-only values.
+            </p>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
+              <div class="p-3 bg-brand-overlay border border-brand-border rounded-xl">
+                <span class="text-xs font-bold uppercase tracking-tighter text-brand-primary"
+                  >ISO String</span
+                >
+                <div class="mt-2 font-mono text-sm text-brand-text break-all">
+                  "{{ datetimeExamples().iso }}"
+                </div>
+              </div>
+              <div class="p-3 bg-brand-overlay border border-brand-border rounded-xl">
+                <span class="text-xs font-bold uppercase tracking-tighter text-brand-primary"
+                  >Unix Seconds</span
+                >
+                <div class="mt-2 font-mono text-sm text-brand-text">
+                  {{ datetimeExamples().unix }}
+                </div>
+              </div>
+              <div class="p-3 bg-brand-overlay border border-brand-border rounded-xl">
+                <span class="text-xs font-bold uppercase tracking-tighter text-brand-primary"
+                  >Native Date</span
+                >
+                <div class="mt-2 font-mono text-sm text-brand-text break-words">
+                  {{ datetimeExamples().native }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- String Mode Options -->
+  @if (field().type === GeneratorFieldType.STRING) {
+    <div
+      class="col-span-12 mt-2 pt-3 border-t border-brand-border/30 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-300"
+    >
+      <div
+        class="flex flex-wrap items-center bg-brand-surface/30 p-1 rounded-lg border border-brand-border/30 gap-1"
+      >
+        <button
+          (click)="setStringMode('random')"
+          [class.bg-brand-primary]="getStringMode(field()) === 'random'"
+          [class.text-white]="getStringMode(field()) === 'random'"
+          class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+        >
+          Random Word
+        </button>
+        <button
+          (click)="setStringMode('faker')"
+          [class.bg-brand-primary]="getStringMode(field()) === 'faker'"
+          [class.text-white]="getStringMode(field()) === 'faker'"
+          class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+        >
+          Faker Module
+        </button>
+        <button
+          (click)="setStringMode('template')"
+          [class.bg-brand-primary]="getStringMode(field()) === 'template'"
+          [class.text-white]="getStringMode(field()) === 'template'"
+          class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+        >
+          Template
+        </button>
+        <button
+          (click)="setStringMode('choices')"
+          [class.bg-brand-primary]="getStringMode(field()) === 'choices'"
+          [class.text-white]="getStringMode(field()) === 'choices'"
+          class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+        >
+          Choice List
+        </button>
+      </div>
+
+      @if (getStringMode(field()) === 'choices') {
+        <div class="flex flex-col gap-3 animate-in fade-in slide-in-from-right-2">
+          <div class="grid grid-cols-1 xl:grid-cols-[7rem_minmax(0,1fr)] gap-2 xl:gap-3 items-start">
+            <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted pt-2"
+              >Choices</span
+            >
+            <input
+              #choicesInput
+              type="text"
+              [value]="field().options?.choices?.join(', ') ?? ''"
+              (input)="
+                fieldOptionsUpdate.emit({
+                  choices: convertChoices(choicesInput.value),
+                  weights: undefined,
+                })
+              "
+              placeholder="A, B, C..."
+              class="w-full bg-brand-surface/50 border border-brand-border/50 rounded-lg px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all"
+            />
+          </div>
+          @if (field().options?.choices && field().options!.choices!.length > 0) {
+            <div class="grid grid-cols-1 xl:grid-cols-[7rem_minmax(0,1fr)] gap-2 xl:gap-3 items-start">
+              <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted pt-2"
+                >Weights</span
+              >
+              <div class="flex flex-col gap-2">
+                <div class="flex flex-col md:flex-row md:items-center gap-2">
+                  <input
+                    #weightsInput
+                    type="text"
+                    [value]="weightsToString(field().options?.weights)"
+                    (input)="fieldOptionsUpdate.emit({ weights: convertWeights(weightsInput.value) })"
+                    [placeholder]="field().options!.choices!.map(() => '1').join(', ')"
+                    class="w-full bg-brand-surface/50 border border-brand-border/50 rounded-lg px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all font-mono"
+                  />
+                  @if (field().options?.weights && field().options!.weights!.length > 0) {
+                    <span
+                      class="text-sm font-mono text-brand-text-muted shrink-0 bg-brand-surface/50 border border-brand-border/40 px-3 py-2 rounded-md"
+                    >
+                      Σ = {{ weightsTotal(field().options?.weights) }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-brand-text-muted/70 xl:ml-[7.75rem]">
+              Leave blank for equal probability. E.g. <span class="font-mono">80, 15, 5</span> means
+              80% chance of Choice 1, 15% of Choice 2, 5% of Choice 3.
+            </p>
+          }
+        </div>
+      } @else if (getStringMode(field()) === 'faker') {
+        <div
+          class="grid grid-cols-1 xl:grid-cols-[7rem_minmax(0,1fr)_auto] gap-2 xl:gap-3 items-start animate-in fade-in slide-in-from-right-2"
+        >
+          <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted pt-2"
+            >Module</span
+          >
+          <input
+            #fakerInput
+            type="text"
+            list="faker-hints"
+            [value]="field().options?.faker ?? ''"
+            (input)="fieldOptionsUpdate.emit({ faker: fakerInput.value })"
+            placeholder="e.g. airline.flightNumber"
+            class="w-full bg-brand-surface/50 border border-brand-border/50 rounded-lg px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all font-mono"
+          />
+          <button
+            (click)="openCustomData.emit('dictionaries')"
+            class="h-[42px] px-3 text-brand-text-muted hover:text-brand-accent hover:bg-brand-accent/10 border border-brand-border/50 rounded-lg transition-all shrink-0 flex items-center justify-center"
+            title="Manage Custom Dictionaries"
+          >
+            <app-icon name="add" [size]="16"></app-icon>
+          </button>
+        </div>
+      } @else if (getStringMode(field()) === 'template') {
+        <div class="flex flex-col gap-3 animate-in fade-in slide-in-from-right-2 relative">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+                >Template</span
+              >
+              <span
+                class="text-xs uppercase tracking-tighter text-brand-text-muted bg-brand-surface/50 border border-brand-border/50 rounded-full px-2 py-1"
+              >
+                Use <span class="font-mono">{{ "{{tag}}" }}</span> placeholders
+              </span>
+            </div>
+            <div class="flex gap-1 shrink-0">
+              <button
+                (click)="showTemplateInfo.update((v) => !v)"
+                class="p-1.5 text-brand-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-all"
+                title="Show Template Library"
+              >
+                <app-icon name="info" [size]="16"></app-icon>
+              </button>
+              <button
+                (click)="openCustomData.emit('all')"
+                class="p-1.5 text-brand-text-muted hover:text-brand-accent hover:bg-brand-accent/10 rounded-md transition-all"
+                title="Manage Custom Templates & Dictionaries"
+              >
+                <app-icon name="add" [size]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative">
+            <textarea
+              #templateInput
+              [value]="field().options?.template ?? ''"
+              (input)="onTemplateInput($event, templateInput)"
+              (blur)="autocompleteOpen.set(false)"
+              [placeholder]="'e.g. {{person.firstName}} {{person.lastName}}'"
+              rows="4"
+              class="w-full min-h-32 resize-y bg-brand-surface/50 border border-brand-border/50 rounded-xl px-4 py-3 text-sm text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all font-mono"
+            ></textarea>
+            @if (autocompleteOpen() && filteredAutocompleteTags().length > 0) {
+              <div
+                class="absolute z-100 top-full left-0 mt-2 w-full max-w-md max-h-56 overflow-y-auto bg-brand-overlay/95 backdrop-blur-xl border border-brand-primary/30 rounded-xl shadow-2xl p-1 brand-scrollbar animate-in fade-in zoom-in-95"
+                (mousedown)="$event.preventDefault()"
+              >
+                <div class="px-2 py-1.5 border-b border-brand-border/40 mb-1">
+                  <span class="text-xs font-bold text-brand-primary uppercase tracking-tighter"
+                    >Available Tags</span
+                  >
+                </div>
+                @for (tag of filteredAutocompleteTags(); track tag) {
+                  <button
+                    type="button"
+                    (click)="selectTag(tag, templateInput)"
+                    class="w-full text-left px-2 py-1.5 text-sm font-mono text-brand-text/90 hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-colors truncate"
+                  >
+                    {{ tag }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          @if (showTemplateInfo()) {
+            <div
+              class="p-3 bg-brand-surface border border-brand-border/30 rounded-xl animate-in fade-in slide-in-from-top-2"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-brand-primary/80 uppercase tracking-tighter"
+                  >Template Library</span
+                >
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @for (cat of groupedCustomTemplates(); track cat.category) {
+                  <div class="space-y-1.5">
+                    <span
+                      class="text-sm font-medium font-bold text-brand-text-muted uppercase tracking-tighter"
+                      >{{ cat.category }}</span
+                    >
+                    <div class="flex flex-col gap-1.5">
+                      @for (tpl of cat.items; track tpl) {
+                        <button
+                          type="button"
+                          (click)="fieldOptionsUpdate.emit({ template: tpl })"
+                          class="text-left text-xs px-2.5 py-2 bg-brand-overlay/50 border border-brand-border/60 hover:border-brand-primary/50 hover:bg-brand-primary/5 rounded-lg text-brand-text/90 hover:text-brand-primary transition-all font-mono truncate"
+                          [title]="tpl"
+                        >
+                          {{ tpl }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Cron Options -->
+  @if (field().type === GeneratorFieldType.CRON) {
+    <div
+      class="col-span-12 mt-2 pt-3 border-t border-brand-border/30 flex flex-wrap items-center gap-6 animate-in slide-in-from-top-2 duration-300"
+    >
+      <div class="flex-1 flex items-center gap-3">
+        <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+          >Pattern</span
+        >
+        <input
+          #cronInput
+          type="text"
+          [value]="field().options?.pattern ?? ''"
+          (input)="fieldOptionsUpdate.emit({ pattern: cronInput.value })"
+          placeholder="* * * * *"
+          class="flex-1 bg-brand-surface/50 border border-brand-border/50 rounded-lg px-3 py-1.5 text-xs text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all font-mono"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- Regex Options -->
+  @if (field().type === GeneratorFieldType.REGEX) {
+    <div
+      class="col-span-12 mt-2 pt-3 border-t border-brand-border/30 flex flex-col gap-2 animate-in slide-in-from-top-2 duration-300"
+    >
+      <div class="flex-1 flex items-center gap-3">
+        <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted shrink-0"
+          >Pattern</span
+        >
+        <div class="flex-1 flex items-center gap-2">
+          <input
+            #regexInput
+            type="text"
+            [value]="field().options?.pattern ?? ''"
+            (input)="fieldOptionsUpdate.emit({ pattern: regexInput.value })"
+            placeholder="e.g. [A-Z]{3}-[0-9]{4}"
+            class="flex-1 bg-brand-surface/50 border border-brand-border/50 rounded-lg px-3 py-1.5 text-xs text-brand-text focus:outline-none focus:border-brand-primary/50 transition-all font-mono"
+          />
+          <button
+            (click)="showRegexInfo.update((v) => !v)"
+            class="p-1.5 text-brand-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-all shrink-0"
+            title="Show Regex Examples"
+          >
+            <app-icon name="info" [size]="16"></app-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Regex Examples Panel -->
+      @if (showRegexInfo()) {
+        <div
+          class="mt-1 p-3 bg-brand-surface border border-brand-border/30 rounded-xl animate-in fade-in slide-in-from-top-2"
+        >
+          <div class="flex flex-col gap-1 mb-3">
+            <span class="text-xs font-bold text-brand-primary/80 uppercase tracking-tighter"
+              >Supported Capabilities & Examples</span
+            >
+            <p class="text-xs text-brand-text-muted">
+              Our generator natively supports advanced Regex capabilities including
+              <strong>grouping</strong>, <strong>piping</strong>, <strong>wildcards</strong>,
+              <strong>backreferences</strong>, and <strong>custom repetition</strong>. Click an
+              example below to use it.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            @for (example of regexExamples; track example.label) {
+              <button
+                type="button"
+                (click)="
+                  fieldOptionsUpdate.emit({ pattern: example.pattern }); showRegexInfo.set(false)
+                "
+                class="flex flex-col items-start text-left text-xs px-2.5 py-2 bg-brand-overlay/50 border border-brand-border/60 hover:border-brand-primary/50 hover:bg-brand-primary/5 rounded-lg transition-all group"
+              >
+                <span
+                  class="font-bold text-brand-text-muted group-hover:text-brand-primary transition-colors text-sm uppercase tracking-tighter"
+                  >{{ example.label }}</span
+                >
+                <span class="font-mono text-brand-text/90 mt-0.5 truncate w-full">{{
+                  example.pattern
+                }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Location Options -->
+  @if (field().type === GeneratorFieldType.LOCATION) {
+    <div
+      class="col-span-12 mt-2 pt-3 border-t border-brand-border/30 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-300"
+    >
+      <div class="flex flex-wrap items-center gap-6">
+        <div class="flex items-center gap-3">
+          <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+            >Center</span
+          >
+          <div class="flex items-center gap-2">
+            <app-stepper
+              [value]="field().options?.latitude ?? 51.5074"
+              (valueChange)="fieldOptionsUpdate.emit({ latitude: $event ?? undefined })"
+              [step]="0.0001"
+              placeholder="Lat"
+              inputClass="w-20 text-xs"
+            ></app-stepper>
+            <app-stepper
+              [value]="field().options?.longitude ?? -0.1278"
+              (valueChange)="fieldOptionsUpdate.emit({ longitude: $event ?? undefined })"
+              [step]="0.0001"
+              placeholder="Lng"
+              inputClass="w-20 text-xs"
+            ></app-stepper>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted">Radius (km)</span>
+          <app-stepper
+            [value]="field().options?.radius ?? 10"
+            (valueChange)="fieldOptionsUpdate.emit({ radius: $event ?? undefined })"
+            [min]="0"
+            [step]="0.1"
+          ></app-stepper>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted"
+            >Format</span
+          >
+          <app-select
+            [options]="locationFormatOptions"
+            [value]="field().options?.format ?? 'object'"
+            (change)="fieldOptionsUpdate.emit({ format: $event })"
+            class="w-48"
+          ></app-select>
+          <button
+            (click)="showLocationInfo.update(v => !v)"
+            class="p-1.5 text-brand-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-all flex items-center gap-2 group"
+          >
+            <app-icon name="info" [size]="16" class="group-hover:scale-110 transition-transform"></app-icon>
+            <span class="text-sm font-bold uppercase tracking-tighter">How it works</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Location Info Panel -->
+      @if (showLocationInfo()) {
+        <div class="p-4 bg-brand-surface border border-brand-border/40 rounded-2xl animate-in fade-in slide-in-from-top-2">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold uppercase tracking-[0.2em] text-brand-primary">Geospatial Configuration</span>
+              <button (click)="showLocationInfo.set(false)" class="text-brand-text-muted hover:text-brand-text transition-colors">
+                <app-icon name="close" [size]="14"></app-icon>
+              </button>
+            </div>
+            <p class="text-xs text-brand-text-muted leading-relaxed max-w-2xl">
+              Generates random GPS coordinates within the specified radius of your center point. 
+              The <strong>Format</strong> selection controls how the resulting data is structured in your final JSON payload.
+            </p>
+            <div class="space-y-2 mt-2">
+              <span class="text-sm font-medium font-bold uppercase tracking-tighter text-brand-accent/70">Generated Output Preview</span>
+              <div class="p-3 bg-brand-overlay border border-brand-border rounded-xl font-mono text-sm text-brand-accent shadow-inner">
+                {{ locationExample() }}
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Nested Fields (OBJECT / ARRAY) -->
+  @if (field().type === GeneratorFieldType.OBJECT || field().type === GeneratorFieldType.ARRAY) {
+    <div
+      class="col-span-12 mt-2 pt-3 border-t border-brand-border/30 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-300"
+    >
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                (click)="isExpanded.update((v) => !v)"
+                class="flex items-center gap-2 p-1.5 hover:bg-brand-overlay rounded-lg transition-all"
+              >
+                <app-icon
+                  [name]="isExpanded() ? 'expand_more' : 'chevron_right'"
+                  [size]="16"
+                  class="text-brand-primary"
+                ></app-icon>
+                <span class="text-sm uppercase tracking-tighter font-bold text-brand-text/80">
+                  {{ getStructureLabel() }}
+                </span>
+              </button>
+
+              <button
+                (click)="field().type === GeneratorFieldType.OBJECT ? showObjectInfo.update((v) => !v) : showArrayInfo.update((v) => !v)"
+                class="p-1.5 text-brand-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-all flex items-center gap-2 group"
+              >
+                <app-icon
+                  name="info"
+                  [size]="14"
+                  class="group-hover:scale-110 transition-transform"
+                ></app-icon>
+                <span class="text-sm font-bold uppercase tracking-tighter">How it works</span>
+              </button>
+
+              <span class="px-2 py-0.5 rounded-md bg-brand-overlay border border-brand-border text-sm font-medium font-mono text-brand-text-muted">
+                {{ field().fields?.length || 0 }} fields
+              </span>
+            </div>
+
+            @if ((field().fields?.length || 0) > 0) {
+              <div class="flex flex-wrap gap-2">
+                @for (childField of structurePreviewFields(); track childField.name + '-' + $index) {
+                  <button
+                    type="button"
+                    (click)="drillDown.emit()"
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-overlay border border-brand-border text-left hover:border-brand-primary/50 hover:bg-brand-primary/5 transition-all"
+                  >
+                    <span class="text-sm font-semibold text-brand-text">
+                      {{ childField.name || 'unnamed' }}
+                    </span>
+                    <span class="text-xs uppercase tracking-tighter text-brand-text-muted font-bold">
+                      {{ formatFieldTypeLabel(childField.type) }}
+                    </span>
+                  </button>
+                }
+                @if (hiddenStructureFieldCount() > 0) {
+                  <button
+                    type="button"
+                    (click)="drillDown.emit()"
+                    class="px-3 py-1.5 rounded-full bg-brand-surface/40 border border-brand-border text-sm font-semibold text-brand-text-muted hover:text-brand-primary hover:border-brand-primary/40 transition-all"
+                  >
+                    +{{ hiddenStructureFieldCount() }} more
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="text-sm text-brand-text-muted">
+                No nested fields yet. Add them once and they will show up here.
+              </p>
+            }
+            @if (field().type === GeneratorFieldType.ARRAY) {
+              <div class="flex flex-col gap-3 pt-1">
+                <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted">Array Size</span>
+                <div class="flex flex-wrap items-center bg-brand-surface/30 p-1 rounded-lg border border-brand-border/30 gap-1 w-fit max-w-full">
+                  <button
+                    (click)="setArrayCountMode('fixed')"
+                    [class.bg-brand-primary]="getArrayCountMode() === 'fixed'"
+                    [class.text-white]="getArrayCountMode() === 'fixed'"
+                    class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+                  >
+                    Fixed
+                  </button>
+                  <button
+                    (click)="setArrayCountMode('random')"
+                    [class.bg-brand-primary]="getArrayCountMode() === 'random'"
+                    [class.text-white]="getArrayCountMode() === 'random'"
+                    class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+                  >
+                    Random
+                  </button>
+                  <button
+                    (click)="setArrayCountMode('range')"
+                    [class.bg-brand-primary]="getArrayCountMode() === 'range'"
+                    [class.text-white]="getArrayCountMode() === 'range'"
+                    class="px-3 py-1 rounded-md text-xs font-bold tracking-tight transition-all uppercase"
+                  >
+                    Range
+                  </button>
+                </div>
+
+                @if (getArrayCountMode() === 'fixed') {
+                  <div class="flex items-center gap-3">
+                    <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted min-w-20">Items</span>
+                    <app-stepper
+                      [value]="getArrayFixedCount()"
+                      (valueChange)="fieldOptionsUpdate.emit({ count: $event ?? undefined })"
+                      [min]="0"
+                      inputClass="w-12 text-xs"
+                    ></app-stepper>
+                  </div>
+                } @else if (getArrayCountMode() === 'random') {
+                  <div class="flex items-center gap-3">
+                    <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted min-w-20">Max Items</span>
+                    <app-stepper
+                      [value]="getArrayRandomMax()"
+                      (valueChange)="fieldOptionsUpdate.emit({ countMax: $event ?? undefined })"
+                      [min]="0"
+                      inputClass="w-12 text-xs"
+                    ></app-stepper>
+                  </div>
+                } @else {
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
+                    <div class="flex flex-col gap-2">
+                      <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted">Min</span>
+                      <app-stepper
+                        class="w-full"
+                        [value]="getArrayRangeMin()"
+                        (valueChange)="fieldOptionsUpdate.emit({ countMin: $event ?? undefined })"
+                        [min]="1"
+                        containerClass="w-full justify-between"
+                        inputClass="flex-1 min-w-0 text-xs"
+                      ></app-stepper>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                      <span class="text-sm uppercase tracking-tighter font-bold text-brand-text-muted">Max</span>
+                      <app-stepper
+                        class="w-full"
+                        [value]="getArrayRangeMax()"
+                        (valueChange)="fieldOptionsUpdate.emit({ countMax: $event ?? undefined })"
+                        [min]="1"
+                        containerClass="w-full justify-between"
+                        inputClass="flex-1 min-w-0 text-xs"
+                      ></app-stepper>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-brand-border/60 bg-brand-surface/30 p-6 flex flex-col items-center justify-center gap-3 text-center">
+          <div>
+            <p class="text-sm font-bold uppercase tracking-tighter text-brand-text">
+              {{ field().name || 'unnamed' }} structure
+            </p>
+            <p class="text-sm text-brand-text-muted">
+              Open the structure editor whenever you want to add or change nested fields.
+            </p>
+          </div>
+          <button
+            (click)="drillDown.emit()"
+            class="flex items-center gap-3 px-5 py-3 bg-brand-primary/10 border border-brand-primary/30 text-brand-primary rounded-2xl hover:bg-brand-primary hover:text-white transition-all group shadow-lg shadow-brand-primary/10"
+          >
+            <app-icon name="account_tree" [size]="18" class="group-hover:scale-110 transition-transform"></app-icon>
+            <span class="text-sm font-bold uppercase tracking-[0.2em]">Edit Structure</span>
+          </button>
+          @if ((field().fields?.length || 0) === 0 && isExpanded()) {
+            <span class="text-xs text-brand-text-muted max-w-md">
+              This structure is empty for now. Add the fields that should live inside
+              <span class="font-semibold text-brand-text">{{ field().name || 'unnamed' }}</span>.
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Object Info Panel -->
+      @if (field().type === GeneratorFieldType.OBJECT && showObjectInfo()) {
+        <div class="p-4 bg-brand-surface border border-brand-border/40 rounded-2xl animate-in fade-in slide-in-from-top-2">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold uppercase tracking-[0.2em] text-brand-primary">Nested Object Logic</span>
+              <button (click)="showObjectInfo.set(false)" class="text-brand-text-muted hover:text-brand-text transition-colors">
+                <app-icon name="close" [size]="14"></app-icon>
+              </button>
+            </div>
+            <p class="text-xs text-brand-text-muted leading-relaxed max-w-2xl">
+              Groups multiple fields together into a single nested JSON object. This is useful for creating hierarchical data structures like <strong>user profile</strong> or <strong>metadata</strong> blocks.
+            </p>
+            <div class="space-y-2 mt-2">
+              <span class="text-sm font-medium font-bold uppercase tracking-tighter text-brand-accent/70">Example Structure</span>
+              <div class="p-3 bg-brand-overlay border border-brand-border rounded-xl font-mono text-sm text-brand-accent shadow-inner whitespace-pre">
+{{ '{' }}
+  "{{ field().name }}": {{ '{' }}
+    "prop1": "value",
+    "prop2": 123
+  {{ '}' }}
+{{ '}' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Array Info Panel -->
+      @if (field().type === GeneratorFieldType.ARRAY && showArrayInfo()) {
+        <div class="p-4 bg-brand-surface border border-brand-border/40 rounded-2xl animate-in fade-in slide-in-from-top-2">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold uppercase tracking-[0.2em] text-brand-primary">Object Array Logic</span>
+              <button (click)="showArrayInfo.set(false)" class="text-brand-text-muted hover:text-brand-text transition-colors">
+                <app-icon name="close" [size]="14"></app-icon>
+              </button>
+            </div>
+            <p class="text-xs text-brand-text-muted leading-relaxed max-w-2xl">
+              The <strong>Item Structure</strong> defines the blueprint for every object in the array.
+              The <strong>Array Size</strong> decides whether the output uses an exact size, a random size from zero up to a maximum, or a random size inside a min/max range.
+            </p>
+            <div class="space-y-2 mt-2">
+              <span class="text-sm font-medium font-bold uppercase tracking-tighter text-brand-accent/70">Example with Size: 2</span>
+              <div class="p-3 bg-brand-overlay border border-brand-border rounded-xl font-mono text-sm text-brand-accent shadow-inner whitespace-pre">
+[
+  {{ '{' }} "id": 1, "name": "Alice" {{ '}' }},
+  {{ '{' }} "id": 2, "name": "Bob" {{ '}' }}
+]
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

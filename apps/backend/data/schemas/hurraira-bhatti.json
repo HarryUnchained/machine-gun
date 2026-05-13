@@ -1,0 +1,27 @@
+{
+  "id": "hurraira-bhatti",
+  "name": "Harry Testing",
+  "fields": [
+    {
+      "name": "price",
+      "type": "int",
+      "options": {
+        "min": -5,
+        "max": 5
+      }
+    }
+  ],
+  "destination": {
+    "transport": "rabbitmq",
+    "targetType": "exchange",
+    "target": "unchained",
+    "routingKey": "",
+    "isRpc": false,
+    "assertTarget": false,
+    "durableTarget": true,
+    "exchangeType": "direct"
+  },
+  "defaultFrequency": 1,
+  "source": "dynamic",
+  "description": "This is testing of schema creation and saving"
+}

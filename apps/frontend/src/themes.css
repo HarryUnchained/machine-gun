@@ -1,0 +1,113 @@
+/* --- Professional Theme Library --- */
+
+/* Royal (Default Indigo) */
+:root {
+  --brand-primary: #6366f1; /* indigo-500 */
+  --brand-primary-fg: #ffffff;
+  --brand-accent: #8b5cf6;  /* violet-500 */
+  --brand-surface: #09090b; /* zinc-950 */
+  --brand-overlay: rgba(255, 255, 255, 0.03);
+  --brand-text: #fafafa;
+  --brand-text-muted: #a1a1aa;
+  --brand-border: rgba(255, 255, 255, 0.08);
+  --brand-warning: #f59e0b;
+}
+
+/* Oceanic (Slate Blue) */
+:root .theme-nord, html.theme-nord, .theme-nord {
+  --brand-primary: #38bdf8; /* sky-400 */
+  --brand-primary-fg: #020617; /* slate-950 */
+  --brand-accent: #818cf8;  /* indigo-400 */
+  --brand-surface: #020617; /* slate-950 */
+  --brand-overlay: rgba(56, 189, 248, 0.05);
+  --brand-text: #f1f5f9;
+  --brand-text-muted: #94a3b8;
+  --brand-border: #1e293b;
+}
+
+/* Sandstone (Warm Stone) */
+:root .theme-serika, html.theme-serika, .theme-serika {
+  --brand-primary: #f59e0b; /* amber-500 */
+  --brand-primary-fg: #0c0a09; /* stone-950 */
+  --brand-accent: #d97706;  /* amber-600 */
+  --brand-surface: #0c0a09; /* stone-950 */
+  --brand-overlay: rgba(245, 158, 11, 0.04);
+  --brand-text: #fafaf9;
+  --brand-text-muted: #a8a29e;
+  --brand-border: #292524;
+}
+
+/* Snow (Clean Light) */
+:root .theme-light, html.theme-light, .theme-light {
+  --brand-primary: #4f46e5;
+  --brand-primary-fg: #ffffff;
+  --brand-accent: #6366f1;
+  --brand-surface: #ffffff;
+  --brand-overlay: #f8fafc; /* slate-50 */
+  --brand-text: #0f172a;
+  --brand-text-muted: #64748b;
+  --brand-border: #e2e8f0;
+  --brand-warning: #d97706;
+}
+
+/* Monochrome Light (White & Black) */
+:root .theme-mono-light, html.theme-mono-light, .theme-mono-light {
+  --brand-primary: #000000;
+  --brand-primary-fg: #ffffff;
+  --brand-accent: #52525b;
+  --brand-surface: #ffffff;
+  --brand-overlay: rgba(0, 0, 0, 0.02);
+  --brand-text: #000000;
+  --brand-text-muted: #71717a;
+  --brand-border: #e5e7eb;
+}
+
+/* Material Indigo (Classic Light) */
+:root .theme-mat-indigo, html.theme-mat-indigo, .theme-mat-indigo {
+  --brand-primary: #3f51b5;
+  --brand-primary-fg: #ffffff;
+  --brand-accent: #ff4081;
+  --brand-surface: #fafafa;
+  --brand-overlay: #f5f5f5;
+  --brand-text: #212121;
+  --brand-text-muted: #757575;
+  --brand-border: #e0e0e0;
+}
+
+/* Material Purple (Classic Light) */
+:root .theme-mat-purple, html.theme-mat-purple, .theme-mat-purple {
+  --brand-primary: #673ab7;
+  --brand-primary-fg: #ffffff;
+  --brand-accent: #ffd740;
+  --brand-surface: #fafafa;
+  --brand-overlay: #f5f5f5;
+  --brand-text: #212121;
+  --brand-text-muted: #757575;
+  --brand-border: #e0e0e0;
+}
+
+/* Theme-Specific Overrides */
+
+/* Scrollbar adjustments for Light themes */
+.theme-light ::-webkit-scrollbar-thumb,
+.theme-mono-light ::-webkit-scrollbar-thumb,
+.theme-mat-indigo ::-webkit-scrollbar-thumb,
+.theme-mat-purple ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.theme-light ::-webkit-scrollbar-thumb:hover,
+.theme-mono-light ::-webkit-scrollbar-thumb:hover,
+.theme-mat-indigo ::-webkit-scrollbar-thumb:hover,
+.theme-mat-purple ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Native Option styling for Light themes */
+.theme-light option,
+.theme-mono-light option,
+.theme-mat-indigo option,
+.theme-mat-purple option {
+  background-color: #ffffff;
+  color: #0f172a;
+}

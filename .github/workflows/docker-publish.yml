@@ -1,0 +1,173 @@
+name: Docker Build & Publish
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  REGISTRY_GHCR: ghcr.io
+  REGISTRY_DOCKERHUB: docker.io
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKERHUB_REPO: harryunchained/machine-gun
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  quality_check:
+    name: "Quality Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Turborepo Cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build common package
+        run: pnpm run build --filter=@machine-gun/common
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+  docker_build:
+    name: "Docker Build (${{ matrix.component }})"
+    needs: quality_check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: unified
+            file: Dockerfile
+          - component: backend
+            file: apps/backend/Dockerfile
+          - component: frontend
+            file: apps/frontend/Dockerfile
+          - component: test-consumer
+            file: apps/test-consumer/Dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into dhi.io
+        uses: docker/login-action@v3
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image (Dry Run)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          push: false
+          tags: machine-gun-${{ matrix.component }}:test
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+
+  docker_publish:
+    name: "Docker Publish (${{ matrix.component }})"
+    needs: docker_build
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: unified
+            file: Dockerfile
+          - component: backend
+            file: apps/backend/Dockerfile
+          - component: frontend
+            file: apps/frontend/Dockerfile
+          - component: test-consumer
+            file: apps/test-consumer/Dockerfile
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log into Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log into dhi.io
+        uses: docker/login-action@v3
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
+            ${{ env.DOCKERHUB_REPO }}
+          tags: |
+            type=raw,value=${{ matrix.component }},enable=${{ matrix.component != 'unified' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && matrix.component == 'unified' }}
+            type=sha,format=short,prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
+            type=semver,pattern={{version}},prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
+            type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
+            type=semver,pattern={{major}},prefix=${{ matrix.component == 'unified' && '' || format('{0}-', matrix.component) }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}

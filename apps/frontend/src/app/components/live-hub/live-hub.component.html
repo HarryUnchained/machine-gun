@@ -1,0 +1,237 @@
+<div [style.width]="isMaximized() ? '100%' : (windowWidth() < 640 ? '100%' : '500px')"
+  class="fixed inset-y-0 right-0 bg-brand-surface/95 backdrop-blur-xl border-l border-brand-border shadow-2xl z-70 flex flex-col animate-in slide-in-from-right duration-500 transition-width ease-in-out">
+  <!-- Header -->
+  <div
+    class="p-6 border-b border-brand-border bg-gradient-to-r from-brand-accent/10 to-transparent flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-brand-accent rounded-xl shadow-lg shadow-brand-accent/20">
+        <app-icon name="terminal" [size]="20" class="text-white"></app-icon>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-brand-text tracking-tight uppercase">Live Hub</h3>
+        <p class="text-xs text-brand-text-muted">Real-time Data Stream & Monitoring</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1 md:gap-2">
+      <!-- Sort Toggle (Icon only when narrow) -->
+      <button (click)="sortOrder.set(sortOrder() === 'desc' ? 'asc' : 'desc')"
+        class="flex items-center gap-2 px-2 md:px-3 py-1.5 bg-brand-overlay rounded-lg text-[10px] font-bold text-brand-text-muted hover:text-brand-accent transition-colors uppercase tracking-tighter"
+        [title]="sortOrder() === 'desc' ? 'Showing Latest' : 'Showing Oldest'">
+        <app-icon [name]="sortOrder() === 'desc' ? 'vertical_align_bottom' : 'vertical_align_top'"
+          [size]="14"></app-icon>
+        <span class="hidden md:inline">{{ sortOrder() === 'desc' ? 'Latest' : 'Oldest' }}</span>
+      </button>
+
+      <div class="w-px h-4 bg-brand-border mx-0.5"></div>
+
+      <button (click)="isMaximized.set(!isMaximized())"
+        class="p-1.5 md:p-2 hover:bg-brand-overlay rounded-lg text-brand-text-muted hover:text-brand-accent transition-colors shrink-0"
+        [title]="isMaximized() ? 'Shrink' : 'Maximize'">
+        <app-icon [name]="isMaximized() ? 'close_fullscreen' : 'expand'" [size]="18"></app-icon>
+      </button>
+
+      <button (click)="clearHistory()"
+        class="p-1.5 md:p-2 hover:bg-brand-overlay rounded-lg text-brand-text-muted hover:text-brand-accent transition-colors shrink-0"
+        title="Clear Console">
+        <app-icon name="delete" [size]="18"></app-icon>
+      </button>
+
+      <div class="w-px h-4 bg-brand-border mx-0.5"></div>
+
+      <button (click)="close.emit()"
+        class="p-1.5 md:p-2 hover:bg-brand-overlay rounded-lg text-brand-text-muted hover:text-brand-text transition-colors shrink-0">
+        <app-icon name="close" [size]="20"></app-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Schema Filters & Stream Type Toggle -->
+  <div
+    class="px-6 py-3 border-b border-brand-border bg-brand-overlay/5 flex items-center gap-3 overflow-x-auto no-scrollbar">
+    <!-- Stream Type Toggle -->
+    <div class="flex bg-brand-overlay rounded-lg p-1 mr-2 shrink-0">
+      <button (click)="filterType.set('all')" [class.bg-brand-surface]="filterType() === 'all'"
+        [class.text-brand-accent]="filterType() === 'all'"
+        class="px-3 py-1 rounded-md text-[10px] font-bold transition-all uppercase tracking-tighter">All</button>
+      <button (click)="filterType.set('rpc')" [class.bg-brand-surface]="filterType() === 'rpc'"
+        [class.text-brand-accent]="filterType() === 'rpc'"
+        class="px-3 py-1 rounded-md text-[10px] font-bold transition-all uppercase tracking-tighter">RPC</button>
+      <button (click)="filterType.set('live')" [class.bg-brand-surface]="filterType() === 'live'"
+        [class.text-brand-accent]="filterType() === 'live'"
+        class="px-3 py-1 rounded-md text-[10px] font-bold transition-all uppercase tracking-tighter">Live</button>
+    </div>
+
+    <div class="w-px h-6 bg-brand-border mx-1"></div>
+
+    @if (availableSchemas().length > 0) {
+    <div
+      class="flex items-center gap-1.5 shrink-0 text-[10px] font-bold text-brand-text-muted uppercase tracking-tighter">
+      <app-icon name="filter_list" [size]="12"></app-icon>
+      Schemas:
+    </div>
+    <div class="flex items-center gap-2">
+      @for (schemaId of availableSchemas(); track schemaId) {
+      <button (click)="toggleSchemaFilter(schemaId)" [class.bg-brand-accent]="selectedSchemas().has(schemaId)"
+        [class.text-white]="selectedSchemas().has(schemaId)" [class.bg-brand-overlay]="!selectedSchemas().has(schemaId)"
+        [class.text-brand-text-muted]="!selectedSchemas().has(schemaId)"
+        class="px-2.5 py-1 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border border-transparent hover:border-brand-accent/30">
+        {{ schemaId }}
+      </button>
+      }
+    </div>
+    @if (selectedSchemas().size > 0) {
+    <button (click)="clearFilters()"
+      class="ml-auto text-[9px] font-bold text-brand-accent uppercase tracking-tighter hover:underline">Clear</button>
+    }
+    }
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 min-h-0">
+    <cdk-virtual-scroll-viewport itemSize="400" class="h-full brand-scrollbar">
+      <div class="p-6 space-y-4">
+        <div *cdkVirtualFor="let item of filteredHistory(); trackBy: trackByTimestamp"
+          class="group relative bg-brand-overlay/20 border border-brand-border rounded-2xl p-4 hover:border-brand-accent/40 transition-all animate-in fade-in slide-in-from-right-4 duration-300">
+
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center gap-2">
+                <span
+                  class="px-2 py-0.5 bg-brand-accent/10 text-brand-accent text-[10px] font-bold rounded uppercase tracking-tighter">{{
+                  item.schemaId }}</span>
+                <span
+                  class="px-2 py-0.5 bg-brand-overlay text-brand-text-muted text-[9px] font-bold rounded uppercase tracking-tighter">{{
+                  item.isRpc ? 'RPC' : 'Live' }}</span>
+                <span class="text-[10px] text-brand-text-muted font-mono ml-2">{{ item.timestamp | date:'HH:mm:ss.SSS'
+                  }}</span>
+                <div class="flex items-center gap-1 ml-2 px-1.5 py-0.5 bg-green-500/10 rounded">
+                  <div class="w-1 h-1 rounded-full bg-green-500 animate-pulse"></div>
+                  <span class="text-[9px] font-bold text-green-500 uppercase tracking-tighter">Success</span>
+                </div>
+              </div>
+              <div class="text-[9px] font-mono text-brand-text-muted/50 uppercase tracking-tighter">
+                TS: {{ item.timestamp }}
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4" [class.lg:grid-cols-2]="isMaximized()">
+            <!-- Request -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <div
+                  class="flex items-center gap-1.5 text-[10px] font-bold text-brand-text-muted uppercase tracking-tighter">
+                  <app-icon [name]="item.isRpc ? 'upload' : 'send'" [size]="10"></app-icon> {{ item.isRpc ? 'Request' :
+                  'Published' }} Payload
+                </div>
+              </div>
+              <div class="relative group/payload bg-black/20 rounded-xl border border-brand-border/30 overflow-hidden">
+                <button (click)="copyToClipboard(item.payload)"
+                  class="absolute top-2 right-2 p-1.5 bg-brand-surface/80 backdrop-blur border border-brand-border rounded-lg text-brand-text-muted hover:text-brand-accent transition-all opacity-0 group-hover/payload:opacity-100 shadow-lg z-10"
+                  title="Copy Request">
+                  <app-icon name="copy" [size]="12"></app-icon>
+                </button>
+                <pre
+                  class="p-3 text-[10px] font-mono text-brand-text/70 overflow-y-auto overflow-x-hidden brand-scrollbar whitespace-pre-wrap"
+                  [class.max-h-32]="!isMaximized()">{{ item.payload | json }}</pre>
+              </div>
+            </div>
+
+            <!-- Response -->
+            @if (item.isRpc) {
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <div
+                  class="flex items-center gap-1.5 text-[10px] font-bold text-brand-accent uppercase tracking-tighter">
+                  <app-icon name="near_me" [size]="10"></app-icon> Response Payload
+                </div>
+              </div>
+              <div class="relative group/payload bg-brand-accent/5 rounded-xl border border-brand-accent/20 overflow-hidden">
+                <button (click)="copyToClipboard(item.response)"
+                  class="absolute top-2 right-2 p-1.5 bg-brand-surface/80 backdrop-blur border border-brand-border rounded-lg text-brand-text-muted hover:text-brand-accent transition-all opacity-0 group-hover/payload:opacity-100 shadow-lg z-10"
+                  title="Copy Response">
+                  <app-icon name="copy" [size]="12"></app-icon>
+                </button>
+                <pre class="p-3 text-[10px] font-mono text-brand-accent overflow-y-auto overflow-x-hidden brand-scrollbar whitespace-pre-wrap"
+                  [class.max-h-40]="!isMaximized()">{{ item.response | json }}</pre>
+              </div>
+            </div>
+            } @else {
+            <div
+              class="space-y-1.5 flex flex-col justify-center bg-brand-overlay/10 rounded-xl p-3 border border-brand-border/20 border-dashed">
+              <div class="flex items-center gap-2 text-brand-text-muted">
+                <app-icon name="check_circle" [size]="14" class="text-green-500"></app-icon>
+                <span class="text-[10px] font-bold uppercase tracking-tighter">Published to Destination</span>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+
+        @if (history().length === 0) {
+        <div class="h-full flex flex-col items-center justify-center text-center px-6 py-20">
+          <div class="w-16 h-16 bg-brand-overlay rounded-3xl flex items-center justify-center mb-6 animate-pulse">
+            <app-icon name="terminal" [size]="32" class="text-brand-accent"></app-icon>
+          </div>
+          <h3 class="text-lg font-bold text-brand-text mb-2 uppercase tracking-tight">Active Stream Ready</h3>
+          <p class="text-sm text-brand-text-muted mb-8 max-w-sm">
+            Your real-time payload traffic, RPC responses, and delivery logs will appear here.
+          </p>
+
+          <div class="grid grid-cols-1 gap-4 w-full max-w-md text-left">
+            <div
+              class="flex gap-4 p-5 rounded-xl bg-brand-overlay/20 border border-brand-border/50 transition-all hover:bg-brand-overlay/30">
+              <div
+                class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold text-lg">
+                1</div>
+              <div class="pt-1">
+                <div class="text-sm font-bold text-brand-text uppercase mb-1">Pick a Generator</div>
+                <p class="text-sm text-brand-text-muted leading-relaxed">Select any schema from your library to open the
+                  generation control panel.</p>
+              </div>
+            </div>
+
+            <div
+              class="flex gap-4 p-5 rounded-xl bg-brand-overlay/20 border border-brand-border/50 transition-all hover:bg-brand-overlay/30">
+              <div
+                class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold text-lg">
+                2</div>
+              <div class="pt-1">
+                <div class="text-sm font-bold text-brand-text uppercase mb-1">Trigger Traffic</div>
+                <p class="text-sm text-brand-text-muted leading-relaxed">Use <b>Burst Mode</b> for heavy volume or
+                  <b>Live Stream</b> for continuous data flow.</p>
+              </div>
+            </div>
+
+            <div
+              class="flex gap-4 p-5 rounded-xl bg-brand-overlay/20 border border-brand-border/50 transition-all hover:bg-brand-overlay/30">
+              <div
+                class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold text-lg">
+                3</div>
+              <div class="pt-1">
+                <div class="text-sm font-bold text-brand-text uppercase mb-1">Monitor Output</div>
+                <p class="text-sm text-brand-text-muted leading-relaxed">Inspect payloads, confirm delivery status, or
+                  debug <b>RPC's</b> in real-time.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </cdk-virtual-scroll-viewport>
+  </div>
+
+  <!-- Footer -->
+  <div class="p-6 border-t border-brand-border bg-brand-overlay/10">
+    <div
+      class="flex items-center justify-between text-[10px] font-bold uppercase tracking-tighter text-brand-text-muted">
+      <div class="flex items-center gap-3">
+        <span>Active Stream</span>
+        <span class="text-brand-accent font-mono">{{ history().length }} Messages</span>
+      </div>
+      @if (history().length > 0) {
+      <span class="text-brand-text-muted/50">Keeping last 50 transactions</span>
+      }
+    </div>
+  </div>
+</div>
