@@ -158,6 +158,7 @@ jobs:
           tags: |
             # Tag for the unified image (the main image)
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && matrix.component == 'unified' }}
+            type=raw,value=unified,enable=${{ matrix.component == 'unified' }}
             
             # Specific component tags (backend, frontend, test-consumer)
             type=raw,value=${{ matrix.component }},enable=${{ matrix.component != 'unified' }}
