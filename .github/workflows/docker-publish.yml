@@ -153,9 +153,16 @@ jobs:
           images: |
             ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
             ${{ env.DOCKERHUB_REPO }}
+          flavor: |
+            latest=false
           tags: |
-            type=raw,value=${{ matrix.component }},enable=${{ matrix.component != 'unified' }}
+            # Tag for the unified image (the main image)
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && matrix.component == 'unified' }}
+            
+            # Specific component tags (backend, frontend, test-consumer)
+            type=raw,value=${{ matrix.component }},enable=${{ matrix.component != 'unified' }}
+            
+            # Versioned tags (e.g., 1.0.0 or test-consumer-1.0.0)
             type=semver,pattern={{version}},prefix=${{ matrix.component != 'unified' && format('{0}-', matrix.component) || '' }}
             type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.component != 'unified' && format('{0}-', matrix.component) || '' }}
             type=semver,pattern={{major}},prefix=${{ matrix.component != 'unified' && format('{0}-', matrix.component) || '' }}
